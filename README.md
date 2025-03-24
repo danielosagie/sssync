@@ -1,1 +1,1 @@
-# sssync
+# sssync web app
