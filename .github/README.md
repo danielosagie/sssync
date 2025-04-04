@@ -17,14 +17,11 @@ First commit was on 2025-04-01
 
 Eventually move to .NET & Railway 
 
-
-# Non-embedded Shopify app with OAuth
+### Non-embedded Shopify app with OAuth
 
 This app template allows developers to build a non-embedded Shopify app using Gadget's built-in Shopify authentication system. It simplifies managing user access to multiple shops and handling Shopify connections.
 
-[![Fork template](https://img.shields.io/badge/Fork%20template-%233A0CFF?style=for-the-badge)](https://app.gadget.dev/auth/fork?domain=standalone-shopify-template.gadget.app)
-
-## Key Features
+### Key Features
 
 - Models
 
