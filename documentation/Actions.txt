@@ -1,0 +1,1113 @@
+Action code 
+Most of the logic of your application will end up living as code in action files. action code can change the database, change the requester's session, make outgoing API calls, and really, do anything!
+
+An example action file
+TypeScript
+
+Copy
+import { applyParams, save, ActionOptions } from "gadget-server";
+
+export const run: ActionRun = async ({ api, record, params }) => {
+  await applyParams(record, params);
+  await save(record);
+};
+
+export const options: ActionOptions = {
+  actionType: "update",
+};
+Action file exports 
+An action file can export four pieces: a run function, an onSuccess function, an options object, and a params object.
+
+The run function executes the main body of the action
+The optional onSuccess function executes when the whole action group's run functions complete
+The optional options object configures the action's details, like action type, transactionality and timeouts.
+The optional params object configures the schema of any extra parameters the action accepts.
+run
+function 
+run functions are for the main body of logic that an action should run. Calls to write data to the database generally belong in a run function.
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { save } from "gadget-server";
+
+export const run: ActionRun = async ({ record }) => {
+  record.title ??= "New Record Title";
+  await save(record);
+};
+The run function is passed an action context object describing everything Gadget knows about this action execution, like the incoming parameters, the record the action is running on, the current connections, a logger, and more.
+
+For example, if we have a model named post, we can apply the incoming parameters from an API call to the record instance when a new post is created:
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { save, applyParams } from "gadget-server";
+
+export const run: ActionRun = async ({ record, params }) => {
+  applyParams(record, params);
+  await save(record);
+};
+For more on the context object passed to actions, see the gadget-server reference.
+
+onSuccess
+function 
+The onSuccess function runs once the run function has executed successfully. onSuccess is not run if your action's run function throws, or if one of the other actions being executed at the same time throws.
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { save, applyParams, ActionOptions } from "gadget-server";
+
+export const onSuccess: ActionOnSuccess = async ({ record, params, logger }) => {
+  logger.info({ record, params }, "post successfully created!");
+};
+
+export const options: ActionOptions = {
+  actionType: "create",
+};
+onSuccess functions are often useful for sending data to other systems, like an ecommerce platform, a hosted search service, or any other third party. Similarly, sending emails or push notifications is generally done in an onSuccess function so you can be those notifications are talking about events that actually saved to the database.
+
+TypeScript
+
+Copy
+import twilio from "some-twilio-client";
+
+export const run: ActionRun = async ({ record }) => {
+  // ...
+};
+
+export const onSuccess: ActionOnSuccess = async ({ record }) => {
+  await twilio.sendSMS({
+    to: record.phoneNumber,
+    from: "+11112223333",
+    body: "Notification from a Gadget app!",
+  });
+};
+Why not just do everything in
+run
+? 
+It's generally important to ensure that the changes you are making to your local Gadget database have been committed successfully before informing those other services that changes have been made. If third-party service API calls are made in the run function, there is still a chance that the database transaction will be aborted and rolled back if something else fails. If this happens, the third-party service may have been sent data that doesn't exist in the database, which can be a major bug.
+
+A good rule of thumb is: changes to your Gadget database belong in run function, and changes to a third-party system belong in onSuccess.
+
+Errors in actions 
+Errors thrown during the run or onSuccess function will cause the action to stop processing and will appear in your logs. Errors descriptions will be sent back from your application's auto-generated API as well. When using the api object, they'll be thrown as JavaScript Error objects that you can catch. Throwing an error will also stop any sibling actions, and will prevent any nested actions from starting.
+
+If you are running code that you expect might error in your action, you can wrap it in a try/catch statement:
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { save, applyParams } from "gadget-server";
+
+export const run: ActionRun = async ({ record, params, logger }) => {
+  try {
+    await callUnreliableAPI();
+  } catch (error) {
+    logger.error({ error }, "error encountered");
+  }
+  // continue processing ...
+};
+Transaction rollback from errors 
+If your action is transactional and an error is thrown in the run function, the database transaction will be rolled back, and any changes made to the database won't take effect.
+
+If your action is not transactional, or if errors are thrown in the onSuccess function, any changes made so far in the action will have been committed.
+
+For debugging, errors are also logged when they occur. These logs are visible in the Gadget Log Viewer.
+
+Action transactions 
+By default, the run function of your action is wrapped in a database transaction. This means that either all of the changes made to any record in the run function will commit to the database, or none will if an error is encountered.
+
+To control if transactionality is on or off, export the transactional option:
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const run: ActionRun = async ({ record, params, logger }) => {
+  // ...
+};
+
+export const options: ActionOptions = {
+  // disable transactions for this action
+  transactional: false,
+};
+Transactionality is on by default for model action run functions, and off by default for global action run functions. Transactions currently only group API calls made with the Internal API, so invoking other actions within a transactional action run function will start a new, different transaction. If you need nested action transactions, please contact us on Discord.
+
+api.transaction() 
+transaction: <T>(callback: (transaction: GadgetTransaction) => Promise<T>) => Promise<T>
+
+You can start custom transactions in contexts that don't already have a transaction, like in action onSuccess functions or HTTP routes. To wrap a group of Internal API calls in a transaction, use the api.transaction function.
+
+TypeScript
+
+Copy
+export const onSuccess: ActionOnSuccess = async ({
+  record,
+  params,
+  logger,
+  api,
+}) => {
+  await api.transaction(async ({ client, rollback }) => {
+    // Example of a rollback use case
+    try {
+      await client.internal.someModel.create({ name: "new record" });
+      // Error occurs in call to external service
+      await fetch("https://example.com/api", {
+        method: "POST",
+        body: JSON.stringify({ name: "new record" }),
+      });
+    } catch (error) {
+      logger.error({ error }, "error encountered");
+      // Rollback the transaction
+      await rollback();
+    }
+  });
+};
+GadgetTransaction
+callback params 
+The following params are available in the callback function:
+
+Parameter	Type	Description
+client	GadgetClient	A Gadget API client object. This is the same as the API parameter in action context.
+start	Promise<void>	A function that starts the transaction and returns a void promise.
+commit	Promise<void>	A function that commits the transaction. Returns a void promise.
+rollback	Promise<void>	A function that explicitly rolls back the transaction. It prevents any changes from the transaction from being committed. Uncaught errors will automatically rollback the transaction. Returns a void promise.
+close	() => void	A function that shuts down the transaction, closing the connection to the backend. Void return.
+open	boolean	Returns a boolean.
+subscriptionClient	SubscriptionClient	The instance of the underlying transport object. This is the transaction websocket manager.
+To ensure performance, Gadget will time out any transaction after 5 seconds. If an action exceeds the transaction timeout, a GGT_TRANSACTION_TIMEOUT error will be thrown, and the transaction will be aborted and rolled back.
+
+To avoid hitting transaction timeouts, you can:
+
+disable transactionality for an action that takes longer than 5 seconds by setting transactional: false in the action options
+split up a single transactional action into several smaller actions, each of which is transactional'
+Example of splitting an action into multiple actions:
+
+TypeScript
+
+Copy
+export const onSuccess: ActionOnSuccess = async ({ record, api }) => {
+  // ... do some work
+  await api.enqueue(api.someModel.someAction, { id: record.id });
+  // ... do some more work
+};
+Action timeouts 
+Gadget actions have a default maximum execution duration of 3 minutes. Time spent executing the run and onSuccess functions must total under 3 minutes, or Gadget will abort the action's execution. Actions that run over the timeout will throw the GGT_ACTION_TIMEOUT error and return an error to the API caller.
+
+Note that a timeout error does not guarantee that your code will stop running. If you want to make sure that your code will terminate gracefully, take advantage of the signal property from the action context.
+
+This timeout applies to nested actions as well, such that all nested actions executed simultaneously must complete within the 3-minute timeout.
+
+Action timeouts can be increased by exporting the timeoutMS option:
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+import { save, applyParams } from "gadget-server";
+
+export const run: ActionRun = async ({ record, params, logger }) => {
+  // fast stuff within 5s transaction timeout
+};
+
+export const onSuccess: ActionOnSuccess = async ({ record, params, logger }) => {
+  // slow stuff
+};
+
+export const options: ActionOptions = {
+  // 10 minutes (600,000 milliseconds) for a really long action
+  timeoutMS: 600000,
+};
+Action timeouts can be a maximum of 15 minutes (900,000 milliseconds).
+
+If your action is set to be transactional (which is the default), the run function must finish within 5 seconds. This limit can't be changed. If you want to use longer timeouts, put your logic in onSuccess, or export the transactional: false option.
+
+Default model actions (CRUD) 
+Each model starts with three base actions: a create, an update, and a delete action. These actions allow you to immediately add, change, and remove records from the database without customization. You can leave these actions in place, remove them, or customize their behavior by adding and removing code within their file.
+
+A model with these base actions will generate three mutations in your application's GraphQL API. For example, a model named Post will generate the three createPost, updatePost, and deletePost mutations, which will each trigger their respective action when called.
+
+create
+Action 
+The default create action for your model does a few things:
+
+Creates a new record instance with the default values for any fields set
+Applies incoming parameters from the GraphQL mutation to the record instance with the applyParams function
+Saves the record instance to the database with the save function.
+You can add more code to extend the functionality to the create action to manipulate the record or do other things. For example, if you want to add logic to default a certain field to a dynamically generated value. In that case, you can add some code to the run function and update the record instance before the save utility runs:
+
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ record }) => {
+  record.startDate ??= new Date();
+  // ... rest of the action
+};
+update
+Action 
+The default update action for your model does this:
+
+Finds the given record instance based on the passed-in id parameter
+Applies incoming parameters from the GraphQL mutation to the record instance with the applyParams utility
+Saves the changed record instance fields to the database
+You can add more code to the update action's code to manipulate the record or do other things.
+
+delete
+Action 
+The default delete action for your model does this:
+
+Finds the given record instance based on the passed-in id parameter
+Permanently deletes the record from the database with the deleteRecord utility.
+If you want to log more details or update other records as a result of the delete, you can add more code to the delete action.
+
+upsert
+meta Action 
+Models that have both a create and update action will also have a meta upsert action. The create and update actions must exist for the upsert action to be available on the model. When run, upsert will do one of the following:
+
+Call the create action if the given record does not exist in the database.
+Call the update action if the record does exist in the database.
+TypeScript
+
+Copy
+await api.gizmo.upsert({
+  id: "123",
+  name: "XZ-77",
+  uniqueCode: "112233",
+});
+TypeScript
+
+Copy
+await api.gizmo.upsert({
+  id: "123",
+  name: "XZ-77",
+  uniqueCode: "112233",
+});
+The upsert action uses a record's id field to determine if the record exists in the database. A custom upsert field can be provided with the on: ["customField"] option.
+
+TypeScript
+
+Copy
+// This will upsert the record based on the 'uniqueCode' field
+await api.gizmo.upsert({
+  name: "XZ-77",
+  uniqueCode: "112233",
+  on: ["uniqueCode"],
+});
+If a combination of two fields on a model is used to determine a record's uniqueness, you can provide an array of fields to the on option.
+
+TypeScript
+
+Copy
+// This will upsert the record based on the 'uniqueCode' field and the 'user' relationship
+await api.gizmo.upsert({
+  name: "XZ-77",
+  code: "112233",
+  user: {
+    _link: "1",
+  },
+  on: ["code", "user"],
+});
+Action context 
+Each time an action runs, it gets passed one argument describing the current execution. Most Gadget users use JavaScript destructuring to pull out just the context keys that they require in their action function.
+
+api/models/post/actions/create.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, params, logger, ...others }) => {
+  // ...
+};
+The context object passed into each function has the following keys:
+
+api: A connected, authorized instance of the generated API client for the current Gadget application. See the API Reference for more details on this object's interface.
+params: The incoming data from the API call invoking this action.
+record: The root record this action is operating on (only available in model actions).
+session: A record representing the current user's session, if there is one.
+config: An object of all the environment variables created in Gadget's Environment Variables editor.
+connections: An object containing client objects for all connections. Read the connections guide to see what each connection provides.
+logger: A logger object suitable for emitting log entries viewable in Gadget's Log Viewer.
+model: An object describing the metadata for the model currently being operated on, like the fields and validations this model applies.
+request: An object describing the incoming HTTP request that triggered this action, if it was an HTTP request that triggered it.
+currentAppUrl: The current URL for the environment. e.g. https://my-app.gadget.app
+trigger: An object containing what event caused this action to run.
+Global actions will be passed everything in the context object except a record or a model.
+
+If you have a computed field associated with your model, it is not included within the context, and must be manually loaded into the action. For more information on how to do so, see our computed fields guide.
+
+record 
+For model actions, Gadget automatically loads the record that the action is being taken on from the database at the start of the action. The record is stored in the record key on the action context, so it is there if you'd like to access it.
+
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ record, logger }) => {
+  // will log the record's id
+  logger.info(record.id);
+  // will log the value of the firstName field loaded from the database
+  logger.info(record.firstName);
+};
+You can change properties of the record like normal JavaScript objects:
+
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ record }) => {
+  record.firstName = "New name";
+};
+Note that the record is not automatically saved. To save the record, use the save function from gadget-server:
+
+TypeScript
+
+Copy
+import { save } from "gadget-server";
+
+export const run: ActionRun = async ({ record }) => {
+  await save(record);
+};
+The save function will validate the record and persist it into your Gadget app's database.
+
+The record passed to an action may not be persisted yet. In the case of an actionType: "create" action, there will be a record in the context, but it won't have an id assigned yet. To persist the record and assign it an id, call save(record).
+
+api 
+The api object that gets passed into an action is an instance of the generated JavaScript client for your Gadget application. It works the same way in an action as it does elsewhere and has all the same functions documented in the API Reference. You can use the api object to fetch other data in an action:
+
+TypeScript
+
+Copy
+// example: send a notification to the user who owns the record if they've opted in
+import twilio from "../../twilio-client";
+
+export const run: ActionRun = async ({ api, record }) => {
+  const creator = await api.user.findOne(record.creator._link);
+  if (creator.wantsNotifications) {
+    await twilio.sendSMS({
+      to: creator.phoneNumber,
+      from: "+11112223333",
+      body: "Notification: " + record.title + "was updated",
+    });
+  }
+};
+Or, you can use the api object to change other data in your application as a result of the current action:
+
+TypeScript
+
+Copy
+// example: save an audit log record when this record changes
+export const run: ActionRun = async ({ api, record, model }) => {
+  const changes = record.changes();
+
+  // run a nested `create` action on the `auditLog` model
+  await api.auditLogs.create({
+    action: "Update",
+    model: model.apiIdentifier,
+    record: { _link: record.id },
+    changes: changes.toJSON(),
+  });
+};
+Using the Public API vs the Internal API 
+Your application has two different levels of API: the Public API and the Internal API. The Public API runs the high-level actions you've defined in your app, and the Internal API runs low-level persistence operations that just change the database.
+
+Depending on what you're trying to accomplish with your action, it is sometimes appropriate to use the Public API of your application via api.someModel.create, and sometimes it's appropriate to use the Internal API via api.internal.someModel.create.
+
+Generally, the Public API should be preferred. The Public API for a Gadget application invokes model actions and global action, which means your business logic runs. This means that if you call api.someModel.create() within an action, you are invoking another action from within the currently invoking one. This is supported by Gadget and is often the right thing to do if your business logic needs to trigger other high-level logic.
+
+Sometimes, though, you may want to skip executing all the business logic, and just persist data. The Internal API does just this. The Internal API can be used by running api.internal.someModel.<action name>. You can think of the Internal API like raw SQL statements in other frameworks where you might run explicit INSERT or UPDATE statements that skip over the other bits of the framework.
+
+The Internal API is significantly faster and is often used for building high-volume scripts that need to import data or touch many records quickly. However, because the Internal API skips important logic for actions, it is generally not recommended for use unless you have an explicit reason.
+
+Using
+api.actAsSession 
+By default, inside action code, the api object will have system admin privileges. This means inside your actions, the api object can use any api endpoints without any restrictions. This is very helpful for implementing the internal logic of your app.
+
+However, there are times where you may want the api object to act with the same permissions as the session making the request. In this case you can use api.actAsSession, here is an example:
+
+api/actions/getPublishedPosts.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api }) => {
+  // assume that this action is called from an unauthenticated session
+
+  // by default api has admin privileges, so this will be all posts
+  const allPosts = await api.post.findMany();
+
+  // if we only want published posts, using api we need to filter for them
+  const publishedPosts = await api.post.findMany({
+    filter: {
+      published: {
+        equals: true,
+      },
+    },
+  });
+
+  // assume that there is a filter on the unauthenticated role's read access to post
+  // in this case publishedPosts will be the same as unauthenticatedAccessiblePosts
+  const unauthenticatedAccessiblePosts = await api.actAsSession.post.findMany();
+};
+api.actsAsSession is only available when your action or route has been triggered by a call from a client that is using session authentication. Gadget uses session authentication by default for clients created in the browser, but for clients authenticating with an API Key, .actsAsSession will throw an error. You can use the action context to know if there is a session available:
+
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, session }) => {
+  if (session) {
+    const widgets = await api.actAsSession.widget.findMany();
+  }
+};
+Action infinite loops 
+Be careful when invoking actions within other actions, especially if invoking the same action from within itself.
+
+Invoking actions within actions can cause infinite loops, so care must be taken to avoid this. If you invoke the currently underway action from within itself, your run function will run again, potentially invoking the action again in a chain. Or, if you invoke an action in model B from model A, but model B invokes an action in model A, you can create a chain of action invocations that never ends. Action chains like this can show up in the logs as timeouts or errors that happen at an arbitrary point in an action.
+
+To avoid infinite loops, you must break the loop somehow. There are a couple of options for this:
+
+Use record.changed('someField') to only run a nested action some of the time when data you care about has changed
+Use the Internal API instead of the Public API (api.internal.someModel.update instead of api.someModel.update) to make changes, skipping the action that re-triggers the loop
+Connection Action infinite loops 
+Be careful when invoking remote APIs within actions if those remote APIs might fire webhooks that call back to your application, re-invoking the same action.
+
+Calling third-party APIs from your actions is common, but it's important to be aware that third-party APIs may trigger subsequent actions in your Gadget app.
+
+For example, if you have a Gadget app connected to a Shopify store with a connected shopifyProduct model, every time Shopify sends the app a product/updated webhook, Gadget will run the update action. If the business logic inside the update action makes API calls back to Shopify to update the product again (say to update the tags of a product in response to a change in the other fields), the API call back to Shopify will trigger a second webhook sent back to Gadget. Without care, this can cause an infinite loop of actions triggering webhooks that retrigger the actions.
+
+See Action infinite loops for strategies to break this infinite loop.
+
+logger 
+Each action is passed a logger object conforming to the logger API for logging to Gadget's built-in Log Viewer.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, record, logger }) => {
+  if (!record.someField) {
+    logger.error({ record }, "record is missing required field for processing");
+  } else {
+    logger.info({ recordID: record.id }, "processing record");
+    doImportantThingWithRecord(record);
+  }
+};
+Read more about the logger object in the Logging guide.
+
+trigger 
+Each action is passed a trigger object that contains information related to what event triggered the action to run. The trigger object is different for each type of trigger that can call an action and has a type object describing which type of trigger fired.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, record, trigger, logger }) => {
+  // will log an object like { "type": "api", "rootModel": "someModel", "rootAction": "someAction", etc ... }
+  logger.info(trigger);
+};
+See the Triggers guide for more information on the different types of triggers.
+
+connections 
+The connections object in an action context contains prebuilt client objects for making remote API calls. This is useful for easily reading or writing data in supported Connection systems like Shopify without having to manage API clients or credentials.
+
+For example, suppose you have a Shopify connection to your store best-sneakers.myshopify.com and you want to update a product. You could write an action that creates a Shopify client for this shop, and makes an API call to Shopify like so:
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, record, connections }) => {
+  const shopifyClient = await connections.shopify.forShopDomain(
+    "best-sneakers.myshopify.com"
+  );
+
+  await shopifyClient.graphql(
+    `mutation ($input: ProductInput!) {
+        productUpdate(input: $input) {
+          product {
+            id
+          }
+          userErrors {
+            message
+          }
+        }
+      }`,
+    {
+      input: {
+        id: `gid://shopify/Product/${productId}`,
+        ...productParams,
+      },
+    }
+  );
+};
+Visit the Connections guide to learn more about each of the specific clients.
+
+It's important to keep in mind that changing your remote data could result in an update webhook being sent back to Gadget. Care will need to be taken to ensure you don't get into an infinite feedback loop with the remote system. One good way to ensure this doesn't happen is to make remote updates in the onSuccess function. This guarantees the record has been committed to the database, so you can check the incoming webhook to see if a relevant field has changed before making the remote call.
+
+TypeScript
+
+Copy
+export const onSuccess: ActionOnSuccess = async ({ api, record, connections }) => {
+  // only do the remote update if the body field has changed
+  if (record.changed("body")) {
+    const shopifyClient = await connections.shopify.forShopDomain(
+      "best-sneakers.myshopify.com"
+    );
+
+    await shopifyClient.graphql(
+      `mutation ($input: ProductInput!) {
+        productUpdate(input: $input) {
+          product {
+            id
+          }
+          userErrors {
+            message
+          }
+        }
+      }`,
+      {
+        input: {
+          id: `gid://shopify/Product/${productId}`,
+          ...productParams,
+        },
+      }
+    );
+  }
+};
+request 
+Each action is passed a request object describing the HTTP request which triggered this action. Not all actions are triggered by HTTP requests (like scheduled actions), but for those that are, this will be present. request has the requester's ip (also known as the x-forwarded-for header), the userAgent of the requester, and all the other request headers sent in the request.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, record, trigger, request, logger }) => {
+  // will log the client making this API requests's IP
+  logger.info(request.id);
+  // will log the incoming Authorization request header
+  logger.info(request.headers["authorization"]);
+};
+See all the available properties on the RequestData type in the Reference.
+
+emails 
+Each action is passed an emails object, which is an instance of the GadgetMailer (a Gadget wrapper for NodeMailer). emails is primarily used to handle and facilitate the sending of emails.
+
+signal 
+Each action is passed a signal object, which is an instance of AbortSignal (https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal). signal.aborted will become true when underlying request becomes closed or aborted.
+
+Why/How?
+
+Async requests made to your app's API or an external API can be aborted. Common reasons for a request to be aborted include a timeout or an expected error on the request. An AbortSignal is a read-only representation of a request's status and allows you to handle these aborted requests gracefully.
+
+Example: aborting an action call early
+TypeScript
+
+Copy
+export const run: ActionRun = async ({ api, record, request, signal }) => {
+  for (const dog of await api.internal.dog.findMany()) {
+    if (dog.age < 2) {
+      await api.internal.dog.update({
+        id: dog.id,
+        description: `${dog.name} is a young dog`,
+      });
+    }
+
+    // Use throwIfAborted() to rollback transactions that have not yet been committed
+    signal.throwIfAborted();
+  }
+
+  // This is a feature of fetch which allows you to pass a signal
+  // If we timeout on the gadget server (the call took too long), fetch will immediately cancel
+  const cats = fetch("someAPI/cats", { signal });
+
+  // it is okay if we don't create cats, so we return and have the action succeed
+  if (signal.aborted) return;
+
+  await api.internal.cats.bulkCreate(cats);
+};
+Action options 
+Action options will be found at the bottom of the default action file and provide configuration settings for how your action is executed.
+
+actionType 
+The actionType option set for each action determines how a model action is exposed in the GraphQL API.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  // mark this action as a record creator
+  actionType: "create",
+};
+The actionType option can be one of the following:
+
+create: The action is exposed as a create mutation in the GraphQL API. creates don't accept an id parameter, but do accept parameters for each model's field. If any model fields have a Required validation, those fields must be passed to the create mutation. creates return the newly created record.
+update: The action is exposed as an update mutation in the GraphQL API. updatess require being passed an id parameter, and also accept optional parameters for each model's field. updates return the updated record.
+delete: The action is exposed as a delete mutation in the GraphQL API. deletess require being passed an id parameter, and don't accept or also accept optional parameters for each model's field. Deletes don't return any data.
+custom The action is exposed in the GraphQL API, with the rest of the params up to you. customs require being passed an id parameter, and take no other params by default. customs return the record they were invoked on.
+Global Actions don't have an actionType option, since they aren't exposed in the GraphQL API.
+
+timeoutMS 
+Allows specifying the maximum amount of time (in milliseconds) an action can run before being terminated. This is useful for preventing runaway actions from consuming too many resources. The default timeout is 3 minutes.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  // allow this action to take 1s before throwing a GGT_TIMEOUT_ERROR
+  timeoutMS: 1000,
+};
+transactional 
+Specifies if the action's run function should execute within a database transaction or not. Is true by default.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  // disable transactions for this action
+  transactional: false,
+};
+returnType 
+Specifies whether the action should return the result of the run function. Defaults to false for model actions and true for global actions.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  // enable the ability to return a value from the `run` function of the action
+  returnType: true,
+};
+Let's take a look at a simple example of how to return a value from a run function when setting returnType to true.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { applyParams, save, ActionOptions } from "gadget-server";
+
+export const run: ActionRun = async ({ params, record, logger, api }) => {
+  applyParams(params, record);
+  await save(record);
+  return {
+    // returning an object
+    result: "successfully returned",
+  };
+};
+
+export const onSuccess: ActionOnSuccess = async ({
+  params,
+  record,
+  logger,
+  api,
+}) => {
+  // cannot return from onSuccess!
+};
+
+export const options: ActionOptions = {
+  actionType: "custom",
+  // Setting returnType to `true` as it is false by default on a model action
+  returnType: true,
+};
+triggers 
+Specifies which triggers cause the action to execute.
+
+API endpoint trigger 
+The API endpoint trigger is not shown within options but by default is true in every model action.
+
+The above applies to all model actions except default model actions on a Shopify-related model which do not contain an API endpoint trigger by default. However, custom model actions on a Shopify-related model will contain the API endpoint trigger
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  actionType: "update",
+  // API trigger will not be shown by default on newly created actions
+  triggers: {},
+};
+If you choose to remove the trigger you'll need to explicitly set the API endpoint trigger to false
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  actionType: "update",
+
+  triggers: {
+    // Pass in `api` and set it to false
+    api: false,
+  },
+};
+Shopify webhook triggers 
+Shopify webhook triggers found in model actions are not shown within the options by default.
+
+However, if Shopify webhook triggers are added to global actions they are shown within the options like the example below.
+
+Example: a Shopify webhook trigger in a global action
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  triggers: {
+    shopify: {
+      webhooks: ["products/create", "products/delete", "products/update"],
+    },
+  },
+};
+Adding and removing triggers 
+To add triggers you can just pass in the name of the associated trigger and set it to true.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  actionType: "create",
+  returnType: true,
+  triggers: {
+    // adding in trigger
+    emailSignUp: true,
+  },
+};
+To remove any triggers, you can set the defined trigger in options to false or remove the trigger name and value completely.
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  actionType: "custom",
+  returnType: true,
+  triggers: {
+    // setting trigger to `false` to remove it
+    sendResetPassword: false,
+  },
+};
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+import { ActionOptions } from "gadget-server";
+
+export const options: ActionOptions = {
+  actionType: "custom",
+  returnType: true,
+  // removing trigger
+  triggers: {},
+};
+Adding parameters to actions 
+You can add new parameters to your model or global actions by exporting the params object from your action file:
+
+api/models/someModel/actions/someAction.ts
+TypeScript
+
+Copy
+export const params = {
+  sendNotifications: { type: "boolean" },
+};
+
+export const run: ActionRun = async ({ params }) => {
+  if (params.sendNotifications) {
+    // ...
+  }
+};
+Gadget expects the exported params object to be a subset of a JSON schema specification and currently supports the following JSON schema types:
+
+object
+string
+integer
+number
+boolean
+array
+Only these primitive types are currently supported by Gadget. No other features of JSON schema are currently available, so don't use validations, required and/or schema composition primitives like allOf. If you want to validate parameter values, you can do so in the code of your action.
+
+Adding
+params
+to global actions 
+By default, global actions have no parameters. This means that in many cases, you need to define your own params definition.
+
+add params to a global action
+TypeScript
+
+Copy
+// define params
+export const params = {
+  foo: { type: "string" },
+  bar: { type: "number" },
+};
+
+export const run: ActionRun = async ({ params, logger, api, connections }) => {
+  // params.foo and params.bar are available here
+  logger.info({ foo: params.foo, bar: params.bar });
+  // ... run the action
+};
+This global action could be called with:
+
+call a global action with params
+TypeScript
+
+Copy
+await api.processWidgets({ foo: "hello", bar: 10 });
+Adding
+params
+to model actions 
+Model actions already have a set of parameters automatically generated for them, depending on the type of model action and the fields on the model.
+
+Adding additional params is useful for actions that require parameters to change their behavior, but that you don't want to store on the model, and are useful for custom model actions.
+
+For example, a custom model action for a student model may require a suspensionLength parameter to suspend a student for a given number of days:
+
+add custom params to a model action
+TypeScript
+
+Copy
+import { applyParams, save, ActionOptions } from "gadget-server";
+import { getUpdatedDate } from "../utils";
+
+// define a new param
+export const params = {
+  suspensionLength: { type: "number" },
+};
+
+export const run: ActionRun = async ({
+  params,
+  record,
+  logger,
+  api,
+  connections,
+}) => {
+  applyParams(params, record);
+
+  record.isSuspended = true;
+  // schedule a background action to un-suspend the student
+  await api.enqueue(
+    api.update(
+      record.id,
+      { isSuspended: false },
+      {
+        startAt: getUpdatedDate(params.suspensionLength),
+      }
+    )
+  );
+
+  await save(record);
+};
+
+export const options: ActionOptions = {
+  actionType: "custom",
+};
+This action could be called with:
+
+call a model action with params
+TypeScript
+
+Copy
+await api.student.suspend({ id: "123", suspensionLength: 3 });
+Additional params can also be added to create, update, and delete model actions.
+
+Adding
+object
+parameters 
+Complex object parameters can be added to actions to handle more advanced use cases.
+
+The object param type requires a properties key with a mapping of the properties in the object to their types.
+
+For example, if you want to expose a boolean flag and name object in your action or global action:
+
+define an object param
+TypeScript
+
+Copy
+// define a fullName object composed of first and last strings
+export const params = {
+  fullName: {
+    type: "object",
+    properties: {
+      first: { type: "string" },
+      last: { type: "string" },
+    },
+  },
+};
+
+export const run: ActionRun = async ({ record, params, logger }) => {
+  // params.fullName will be an object like { first: "Jane", last: "Dough" }
+  logger.info({ firstName: params.fullName.first, lastName: params.fullName.last });
+};
+With that in place in your action code, you can now make the following API call:
+
+call an action with an object param
+TypeScript
+
+Copy
+await api.myAction({ fullName: { first: "Jane", last: "Dough" } });
+Adding
+array
+parameters 
+Arrays can be added as parameters to actions, allowing for more complex inputs.
+
+The array param type requires an items key with a mapping of the items in the array to their types. Each item in the array can be a primitive type or an object.
+
+For example, if you want to allow a list of customerIds to be passed into an action:
+
+api/models/order/actions/create.ts
+TypeScript
+
+Copy
+export const params = {
+  customerIds: { type: "array", items: { type: "string" } },
+};
+
+export const run: ActionRun = async ({ record, params }) => {
+  // params.customerIds will be an array of strings
+  for (const customerId of params.customerIds) {
+    // ... do something with each customer id
+  }
+};
+With that in place in your action code, you can now make the following API call:
+
+call an action with an array param
+TypeScript
+
+Copy
+await api.myAction({ customerIds: ["123", "456"] });
+Nested Actions 
+Every action supports calling actions on associated models in its input. This is useful, for example, to create a model and some associated models without having to make API calls for each individual record.
+
+For example, suppose you're modeling a blog where each post has many comments. If we wanted to create a blog post with some comments, it would look something like this with nested actions.
+
+TypeScript
+
+Copy
+await api.post.create({
+  title: "My First Blog Post",
+  author: {
+    _link: "1",
+  },
+  body: "some interesting content",
+  comments: [
+    {
+      create: {
+        body: "first comment!",
+        author: {
+          _link: "2",
+        },
+      },
+    },
+    {
+      create: {
+        body: "another comment",
+        author: {
+          _link: "3",
+        },
+      },
+    },
+  ],
+});
+Note that there's no need for a { _link: "…" } parameter to link the blog post and comments.
+
+How are nested actions executed? 
+When you invoke an action with an input that has nested actions, Gadget will execute the actions in the right order to feed the right values for relationship fields of subsequent inner actions. In the above example, Gadget would create the blog post first and get its ID value to then send into the comment create actions.
+
+When a group of nested actions is executed, all the constituent actions' run functions are executed together within one database transaction, and then the actions' onSuccess are executed second if all the run functions successfully execute. This means that Gadget runs all the run functions for the root action and nested actions first, then commits the transaction, then executes onSuccess functions.
+
+If any actions throw an error during the run function, like say if a record is invalid or a code snippet throws an error, all the actions will be aborted, and no onSuccess function for any action will run.
+
+The rule of thumb is, a run function that fails on any action rolls back changes from all other actions.
+
+Converge actions 
+Gadget supports a special nested action called _converge that creates, updates, or deletes records in the database as needed to match an incoming specified list. Often when updating a parent object and list of child objects at the same time, it is cumbersome to exactly specify the individual operations you want, and instead, it's easier to just specify the new list. _converge figures out the individual operations that take you from the current state in the database to the new specified list. This is most frequently used on forms that edit a parent and child records at the same time so you can just send the new list of child records specified in the form, instead of tracking which things have been added, removed, and changed.
+
+The _converge action will process creates, updates, and deletes using actions with the api identifiers create, update, and delete by default, so any effects added to those actions will run as Gadget converges the record list. You can override which actions Gadget uses to implement the converge using the actions property, see Invoking custom actions to converge for more details.
+
+Run a converge call by specifying _converge as the action name in a nested action input, and passing a new list of records in the values property like so:
+
+json
+
+Copy
+{
+  "_converge": {
+    "values": [
+      // will update record with id 1
+      { "id": "1", "name": "first" },
+      // will create a new record
+      { "name": "second" }
+      // other records not present in this list will be deleted
+    ]
+  }
+}
+For example, suppose you're editing a blog post where each post has many images. If you wanted to build a client side form where users could remove some of the images that exist already, and then add a couple new ones, you can use _converge to create, update, and delete the images as needed to get to the new list. Without _converge, you'd have to manually track the image ids that have been deleted or updated to build the nested actions data format yourself.
+
+Instead, we can converge the list of child images for the post to the newly specified list.
+
+TypeScript
+
+Copy
+await api.post.update("123", {
+  title: "Updated Blog Post",
+  body: "some interesting content",
+  images: [
+    {
+      _converge: {
+        values: [
+          {
+            caption: "Mountains",
+            url: "https://example.com/mountains.jpg",
+          },
+          {
+            id: "10",
+            caption: "Oceans",
+            url: "https://example.com/oceans.jpg",
+          },
+        ],
+      },
+    },
+  ],
+});
+The _converge call above will create a new image with the caption "Mountains" using the Image.create action, and update an existing image with id "10" to have the caption "Oceans" using the Image.update action. It will also delete any images in the database which aren't specified in this list using Image.delete, so if there was previously an image with id "9" labelled "Skies", it'd be deleted.
+
+Invoking custom actions to converge 
+The _converge action will process creates, updates, and deletes using actions with the api identifiers create, update, and delete by default. You can override which actions Gadget uses to implement the converge using the actions property of the passed object like so:
+
+json
+
+Copy
+{
+  "_converge": {
+    "values": [
+      // ...
+    ],
+    "actions": {
+      // will create any new records using the publicCreate action of the child model
+      "create": "publicCreate",
+
+      // will update any existing records using the specialUpdate action of the child model
+      "update": "specialUpdate"
+    }
+  }
+}
+The actions override list is optional and partial, so you can just specify the actions you want to override, or just omit the actions property entirely.

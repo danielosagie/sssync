@@ -1,0 +1,1792 @@
+Inventory
+The Inventory API keeps an inventory of catalog items in sync across all commerce channels.
+
+API	Permission
+BatchChangeInventory    INVENTORY_WRITE
+BatchRetrieveInventoryCounts INVENTORY_READ
+BatchRetrieveInventoryChanges INVENTORY_READ
+RetrieveInventoryAdjustment	INVENTORY_READ
+RetrieveInventoryChanges	INVENTORY_READ
+RetrieveInventoryCount INVENTORY_READ
+RetrieveInventoryPhysicalCount INVENTORY_READ
+
+Locations
+The Locations API
+ gets a list of a seller's locations.
+
+API	Permission
+CreateLocation MERCHANT_PROFILE_WRITE
+ListLocations	MERCHANT_PROFILE_READ
+RetrieveLocation	MERCHANT_PROFILE_READ
+UpdateLocationMERCHANT_PROFILE_WRITE
+
+Merchants
+Use the Merchants API to retrieve information about a Square merchant account.
+
+API	Permission
+ListMerchants	MERCHANT_PROFILE_READ
+RetrieveMerchant	MERCHANT_PROFILE_READ
+
+Orders
+The Orders API gets sales data for a Square seller, itemize payments, push orders to Point of Sale, and more.
+
+API	Permission
+CalculateOrder
+N/A
+CloneOrder	ORDERS_WRITE
+CreateOrder
+ORDERS_WRITE
+BatchRetrieveOrders
+ORDERS_READ
+PayOrder	ORDERS_WRITE
+PAYMENTS_WRITE
+RetrieveOrder	ORDERS_WRITE
+ORDERS_READ
+SearchOrders	ORDERS_READ
+UpdateOrder	ORDERS_WRITE
+
+Merchant Custom Attributes
+The Merchant Custom Attributes API
+ lets you create and manage custom attributes for merchants.
+
+API	Permission
+CreateMerchantCustomAttributeDefinition	MERCHANT_PROFILE_WRITE
+UpdateMerchantCustomAttributeDefinition	MERCHANT_PROFILE_WRITE
+ListMerchantCustomAttributeDefinitions	MERCHANT_PROFILE_READ
+RetrieveMerchantCustomAttributeDefinition	MERCHANT_PROFILE_READ
+DeleteMerchantCustomAttributeDefinition	MERCHANT_PROFILE_WRITE
+UpsertMerchantCustomAttribute	MERCHANT_PROFILE_WRITE
+BulkUpsertMerchantCustomAttributes	MERCHANT_PROFILE_WRITE
+ListMerchantCustomAttributes	MERCHANT_PROFILE_READ
+RetrieveMerchantCustomAttribute	MERCHANT_PROFILE_READ
+DeleteMerchantCustomAttribute	MERCHANT_PROFILE_WRITE
+BulkDeleteMerchantCustomAttributes	MERCHANT_PROFILE_WRITE
+
+
+OAuth webhooks
+
+oauth authorization revoked
+EVENT
+
+ oauth.authorization.revoked
+
+Published when a merchant/application revokes all access tokens and refresh tokens granted to an application.
+
+Event payload
+merchant_id
+
+string
+
+The ID of the target merchant associated with the event.
+
+type
+
+string
+
+The type of event this represents, "oauth.authorization.revoked".
+
+event_id
+
+string
+
+A unique ID for the event.
+
+created_at
+
+string
+
+Read only Timestamp of when the event was created, in RFC 3339 format.
+
+Examples for January 25th, 2020 6:25:34pm Pacific Standard Time:
+
+UTC: 2020-01-26T02:25:34Z
+
+Pacific Standard Time with UTC offset: 2020-01-25T18:25:34-08:00
+
+data
+
+
+OauthAuthorizationRevokedEventData
+
+Data associated with the event.
+
+
+OauthAuthorizationRevokedEventData
+
+
+type
+
+string
+
+Name of the affected object’s type, "revocation".
+
+id
+
+string
+
+Not applicable, revocation is not an object
+
+object
+
+
+OauthAuthorizationRevokedEventObject
+
+An object containing information about revocation event.
+
+
+Show attributes
+
+
+API version
+
+2024-12-18
+
+
+
+
+
+
+
+Response JSON
+
+
+
+{
+  "merchant_id": "J9Z30SF99NPFJ",
+  "type": "oauth.authorization.revoked",
+  "event_id": "e1d6ae37-5aa9-45a5-b525-b12caf819fdb",
+  "created_at": "2020-08-14T15:51:04.246373287Z",
+  "data": {
+    "type": "revocation",
+    "id": "415641cf-eba2-4dfa-88cc-c4be1301fdc6",
+    "object": {
+      "revocation": {
+        "revoked_at": "2020-08-14T15:51:00.246373287Z",
+        "revoker_type": "MERCHANT"
+      }
+    }
+  }
+}Ss
+
+
+OAuth
+
+Authorize
+
+Revoke token
+
+Obtain token
+
+Retrieve token status
+
+Webhooks
+
+oauth.authorization.revoked
+
+
+OAuth API
+
+Retrieve token status
+POST
+
+ /oauth2/token/status
+
+Returns information about an OAuth access token or an application’s personal access token.
+
+Add the access token to the Authorization header of the request.
+
+Important: The Authorization header you provide to this endpoint must have the following format:
+
+
+Authorization: Bearer ACCESS_TOKEN
+where ACCESS_TOKEN is a valid production authorization credential.
+
+If the access token is expired or not a valid access token, the endpoint returns an UNAUTHORIZED error.
+
+Guide
+
+Token Introspection
+
+Try in API Explorer
+Response fields
+scopes
+
+string [ ]
+
+The list of scopes associated with an access token.
+
+expires_at
+
+string
+
+The date and time when the access_token expires, in RFC 3339 format. Empty if the token never expires.
+
+client_id
+
+string
+
+The Square-issued application ID associated with the access token. This is the same application ID used to obtain the token.
+
+Max Length
+191
+merchant_id
+
+string
+
+The ID of the authorizing merchant's business.
+
+Min Length
+8
+Max Length
+191
+errors
+
+
+Error [ ]
+
+Any errors that occurred during the request.
+
+
+Error
+
+
+category
+
+string
+
+Required
+
+The high-level category for the error.
+
+
+Show values
+
+code
+
+string
+
+Required
+
+The specific code of the error.
+
+
+Show values
+
+detail
+
+string
+
+A human-readable description of the error for debugging purposes.
+
+field
+
+string
+
+The name of the field provided in the original request (if any) that the error pertains to.
+
+
+API version
+
+2024-12-18
+
+
+
+
+
+
+
+POST /oauth2/token/status
+
+cURL
+
+
+
+curl https://connect.squareup.com/oauth2/token/status \
+  -X POST \
+  -H 'Square-Version: 2024-12-18' \
+  -H 'Authorization: Bearer ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+Response JSON
+
+
+
+{
+  "scopes": [
+    "PAYMENTS_READ",
+    "PAYMENTS_WRITE"
+  ],
+  "expires_at": "2022-10-14T14:44:00Z",
+  "client_id": "CLIENT_ID",
+  "merchant_id": "MERCHANT_ID"
+}
+
+OAuth API
+
+Revoke token
+POST
+
+ /oauth2/revoke
+
+Revokes an access token generated with the OAuth flow.
+
+If an account has more than one OAuth access token for your application, this endpoint revokes all of them, regardless of which token you specify.
+
+Important: The Authorization header for this endpoint must have the following format:
+
+
+Authorization: Client APPLICATION_SECRET
+Replace APPLICATION_SECRET with the application secret on the OAuth page for your application in the Developer Dashboard.
+
+Guide
+
+Refresh, Revoke, and Limit the Scope of OAuth Tokens
+
+Try in API Explorer
+Request body
+client_id
+
+string
+
+The Square-issued ID for your application, which is available on the OAuth page in the Developer Dashboard.
+
+Max Length
+191
+access_token
+
+string
+
+The access token of the merchant whose token you want to revoke. Do not provide a value for merchant_id if you provide this parameter.
+
+Min Length
+2
+Max Length
+1024
+merchant_id
+
+string
+
+The ID of the merchant whose token you want to revoke. Do not provide a value for access_token if you provide this parameter.
+
+revoke_only_access_token
+
+boolean
+
+If true, terminate the given single access token, but do not terminate the entire authorization. Default: false
+
+Response fields
+success
+
+boolean
+
+If the request is successful, this is true.
+
+errors
+
+
+Error [ ]
+
+Any errors that occurred during the request.
+
+
+Show attributes
+
+
+API version
+
+2024-12-18
+
+
+
+
+
+
+
+POST /oauth2/revoke
+
+cURL
+
+
+
+curl https://connect.squareup.com/oauth2/revoke \
+  -X POST \
+  -H 'Square-Version: 2024-12-18' \
+  -H 'Authorization: Client APPLICATION_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "access_token": "ACCESS_TOKEN",
+    "client_id": "CLIENT_ID"
+  }'
+Response JSON
+
+
+
+{
+  "success": true
+}
+
+
+OAuth API
+
+Authorize
+GET
+
+ /oauth2/authorize
+
+As part of a URL sent to a seller to authorize permissions for the developer, Authorize displays an authorization page and a list of requested permissions.
+
+The completed URL looks similar to the following example: https://connect.squareup.com/oauth2/authorize?client_id={YOUR_APP_ID}&scope=CUSTOMERS_WRITE+CUSTOMERS_READ&session=False&state=82201dd8d83d23cc8a48caf52b
+
+The seller can approve or deny the permissions. If approved, Authorize returns an AuthorizeResponse that is sent to the redirect URL and includes a state string and an authorization code. The code is used in the ObtainToken call to obtain an access token and a refresh token that the developer uses to manage resources on behalf of the seller.
+
+Important: The AuthorizeResponse is sent to the redirect URL that you set on the OAuth page of your application in the Developer Dashboard.
+
+If an error occurs or the seller denies the request, Authorize returns an error response that includes error and error_description values. If the error is due to the seller denying the request, the error value is access_denied and the error_description is user_denied.
+
+Guide
+
+Create the Redirect URL and Square Authorization Page URL
+
+Try in API Explorer
+Query parameters
+client_id
+
+string
+
+Required
+
+The Square-issued ID for your application, which is available on the OAuth page for your application in the Developer Dashboard.
+
+scope
+
+string
+
+A space-separated list of the permissions that the application is requesting. Default: "MERCHANT_PROFILE_READ PAYMENTS_READ SETTLEMENTS_READ BANK_ACCOUNTS_READ"
+
+
+Show values
+
+locale
+
+string
+
+The locale to present the permission request form in. Square detects the appropriate locale automatically. Only provide this value if the application can definitively determine the preferred locale.
+
+Currently supported values: en-IE, en-US, en-CA, es-US, fr-CA, and ja-JP.
+
+session
+
+boolean
+
+If false, the user must log in to their Square account to view the Permission Request form, even if they already have a valid user session. This value has no effect in the Square Sandbox. Default: true
+
+state
+
+string
+
+When provided, state is passed to the configured redirect URL after the Permission Request form is submitted. You can include state and verify its value to help protect against cross-site request forgery.
+
+code_challenge
+
+string
+
+When provided, the OAuth flow uses PKCE to authorize. The code_challenge will be associated with the authorization_code and a code_verifier will need to passed in to obtain the access token.
+
+redirect_url
+
+string
+
+The redirect URL assigned on the OAuth page for your application in the Developer Dashboard. This field is required to use a dynamic port at runtime (PKCE only). To use a dynamic port, use the literal "<port>" as a placeholder for a port in the Redirect URL box in the Developer Dashboard, for example, "http://localhost:<port>". When you call the Authorize endpoint from an application, pass in the actual port in this field. For example: https://connect.squareup.com/oauth2/authorize?client_id={YOUR_APP_ID}&scope=MERCHANT_PROFILE_READ&redirect_url=http://localhost:8000
+
+Response fields
+code
+
+string
+
+A valid authorization code. Authorization codes are exchanged for OAuth access tokens with the ObtainToken endpoint.
+
+Max Length
+191
+state
+
+string
+
+The same value specified in the request.
+
+Min Length
+1
+Max Length
+2048
+
+API version
+
+2024-12-18
+
+
+
+
+
+
+
+GET /oauth2/authorize
+
+cURL
+
+
+
+https://connect.squareup.com/oauth2/authorize
+Response JSON
+
+
+
+
+
+OAuth API
+
+Obtain token
+POST
+
+ /oauth2/token
+
+Returns an OAuth access token and a refresh token unless the short_lived parameter is set to true, in which case the endpoint returns only an access token.
+
+The grant_type parameter specifies the type of OAuth request. If grant_type is authorization_code, you must include the authorization code you received when a seller granted you authorization. If grant_type is refresh_token, you must provide a valid refresh token. If you're using an old version of the Square APIs (prior to March 13, 2019), grant_type can be migration_token and you must provide a valid migration token.
+
+You can use the scopes parameter to limit the set of permissions granted to the access token and refresh token. You can use the short_lived parameter to create an access token that expires in 24 hours.
+
+Note: OAuth tokens should be encrypted and stored on a secure server. Application clients should never interact directly with OAuth tokens.
+
+Guide
+
+Receive Seller Authorization and Manage Seller OAuth Tokens
+
+Try in API Explorer
+Request body
+client_id
+
+string
+
+Required
+
+The Square-issued ID of your application, which is available on the OAuth page in the Developer Dashboard.
+
+Max Length
+191
+client_secret
+
+string
+
+The Square-issued application secret for your application, which is available on the OAuth page in the Developer Dashboard. This parameter is only required when you're not using the OAuth PKCE (Proof Key for Code Exchange) flow. The PKCE flow requires a code_verifier instead of a client_secret when grant_type is set to authorization_code. If grant_type is set to refresh_token and the refresh_token is obtained uaing PKCE, the PKCE flow only requires client_id,  grant_type, and refresh_token.
+
+Min Length
+2
+Max Length
+1024
+code
+
+string
+
+The authorization code to exchange. This code is required if grant_type is set to authorization_code to indicate that the application wants to exchange an authorization code for an OAuth access token.
+
+Max Length
+191
+redirect_url
+
+string
+
+The redirect URL assigned on the OAuth page for your application in the Developer Dashboard.
+
+Max Length
+2048
+grant_type
+
+string
+
+Required
+
+Specifies the method to request an OAuth access token. Valid values are authorization_code, refresh_token, and migration_token.
+
+Min Length
+10
+Max Length
+20
+refresh_token
+
+string
+
+A valid refresh token for generating a new OAuth access token.
+
+A valid refresh token is required if grant_type is set to refresh_token to indicate that the application wants a replacement for an expired OAuth access token.
+
+Min Length
+2
+Max Length
+1024
+migration_token
+
+string
+
+A legacy OAuth access token obtained using a Connect API version prior to 2019-03-13. This parameter is required if grant_type is set to migration_token to indicate that the application wants to get a replacement OAuth access token. The response also returns a refresh token. For more information, see Migrate to Using Refresh Tokens.
+
+Min Length
+2
+Max Length
+1024
+scopes
+
+string [ ]
+
+A JSON list of strings representing the permissions that the application is requesting. For example, "["MERCHANT_PROFILE_READ","PAYMENTS_READ","BANK_ACCOUNTS_READ"]".
+
+The access token returned in the response is granted the permissions that comprise the intersection between the requested list of permissions and those that belong to the provided refresh token.
+
+short_lived
+
+boolean
+
+A Boolean indicating a request for a short-lived access token.
+
+The short-lived access token returned in the response expires in 24 hours.
+
+code_verifier
+
+string
+
+Must be provided when using the PKCE OAuth flow if grant_type is set to authorization_code. The code_verifier is used to verify against the code_challenge associated with the authorization_code.
+
+Response fields
+access_token
+
+string
+
+A valid OAuth access token. Provide the access token in a header with every request to Connect API endpoints. For more information, see OAuth API: Walkthrough.
+
+Min Length
+2
+Max Length
+1024
+token_type
+
+string
+
+This value is always bearer.
+
+Min Length
+2
+Max Length
+10
+expires_at
+
+string
+
+The date when the access_token expires, in ISO 8601 format.
+
+Min Length
+20
+Max Length
+48
+merchant_id
+
+string
+
+The ID of the authorizing merchant's business.
+
+Min Length
+8
+Max Length
+191
+subscription_id
+
+string
+
+LEGACY FIELD. The ID of a subscription plan the merchant signed up for. The ID is only present if the merchant signed up for a subscription plan during authorization.
+
+plan_id
+
+string
+
+LEGACY FIELD. The ID of the subscription plan the merchant signed up for. The ID is only present if the merchant signed up for a subscription plan during authorization.
+
+id_token
+
+string
+
+Deprecated
+
+The OpenID token belonging to this person. This token is only present if the OPENID scope is included in the authorization request.
+
+refresh_token
+
+string
+
+A refresh token. For more information, see Refresh, Revoke, and Limit the Scope of OAuth Tokens.
+
+Min Length
+2
+Max Length
+1024
+short_lived
+
+boolean
+
+A Boolean indicating that the access token is a short-lived access token. The short-lived access token returned in the response expires in 24 hours.
+
+errors
+
+
+Error [ ]
+
+Any errors that occurred during the request.
+
+
+Show attributes
+
+refresh_token_expires_at
+
+string
+
+The date when the refresh_token expires, in ISO 8601 format.
+
+Min Length
+20
+Max Length
+48
+
+API version
+
+2024-12-18
+
+
+
+
+
+
+
+POST /oauth2/token
+
+cURL
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2024-12-18' \
+  -H 'Authorization: Bearer ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_id": "APPLICATION_ID",
+    "client_secret": "APPLICATION_SECRET",
+    "code": "CODE_FROM_AUTHORIZE",
+    "grant_type": "authorization_code"
+  }'
+Response JSON
+
+
+
+{
+  "access_token": "ACCESS_TOKEN",
+  "token_type": "bearer",
+  "expires_at": "2006-01-02T15:04:05Z",
+  "merchant_id": "MERCHANT_ID",
+  "refresh_token": "REFRESH_TOKEN"
+}
+
+OAuth API
+Applies to: OAuth API
+
+Use the OAuth API to connect your application to a seller's account using OAuth.
+
+Overview
+The Square OAuth API uses the OAuth 2 protocol to get permission from the owner of the seller account to manage specific types of resources in that account. This is the process where client applications obtain an authorization code that is then redeemed to get an access token and refresh token. These tokens allow you to manage resources for a seller and are used when calling the Square APIs. The OAuth API lets you request specific permissions from Square sellers to manage their resources and get access tokens to call the Square APIs on their behalf. Usually, you make OAuth part of your setup process when onboarding a Square seller to your application.
+
+Requirements and limitations
+The OAuth API requires HTTPS for the redirect URL for the authorization callback. For testing purposes using the Square Sandbox, you can use HTTP with localhost.
+
+Authorization codes returned by the Square authorization page expire after 5 minutes. An authorization code can only be used once.
+
+Square OAuth access tokens expire after 30 days. To maintain access, you must generate a new OAuth access token using the refresh token received with the original authorization. For more information about managing OAuth access tokens and refresh tokens, see OAuth API Best Practices.
+
+Refresh tokens obtained using the code flow don't expire. Refresh tokens obtained using the PKCE flow are single-use tokens and expire after 90 days. If you lose a refresh token, you must repeat the full OAuth authorization flow to obtain a new OAuth access token and refresh token. A refresh token only becomes invalid when the application's access has been completely revoked.
+
+A refresh token obtained using the code flow can be used to get multiple active access tokens. You can call ObtainToken
+ multiple times with a refresh token. Each access token expires 30 days after it is obtained and each can be individually revoked. Developers sometimes choose to have multiple access tokens for a seller when the seller has a multi-store eCommerce site and wants a separate access token for each store.
+
+OAuth flows
+Square offers two types of OAuth: a code flow and a PKCE (Proof Key for Code Exchange) flow:
+
+The code flow is an OAuth flow that requires a confidential client to pass in the client_id and client_secret values when redeeming an authorization code from Square. Passing these types of sensitive data requires you to use a confidential client.
+
+The PKCE flow is an OAuth flow for public clients that removes the need to pass the client_secret and replaces it with a code_verifier. The code_verifier is a unique string that the client application creates for every authorization request. The PKCE flow must be used by any client that cannot safely store secrets in the application, such as mobile applications, single-page applications, and native desktop applications.
+
+Important
+A confidential client is one where the application runs on a server and the seller interacts with the application by using a browser or an API. A public client, on the other hand, is a mobile or desktop application where the seller has the actual application on their device. Public clients shouldn't store secrets because the secret is stored inside the application and a debugger or disassembler can be used to find the secret.
+
+The OAuth API uses the following OAuth terms when using the code flow or PKCE flow:
+
+Authorization code - A code that is returned when calling the Authorize endpoint. This code is used to redeem an access token and a refresh token.
+Access token - A token that grants access to a client's resources and has some privileges attached to it. Access tokens expire after a certain amount of time.
+Refresh token - A token that is used to generate more access tokens. If you use the code flow, refresh tokens are valid until their access is revoked. If you use the PKCE flow, refresh tokens are single-use tokens and expire after 90 days.
+Square doesn't support OpenID or other single sign-on (SSO) protocols on top of the OAuth implementation.
+
+Code flow
+The OAuth code flow is designed for confidential client applications that run on a server and can store client information securely. The code flow uses the following OAuth terms:
+
+client_id - The ID that is associated with an application using the OAuth process. This is a public variable and is called the Application ID in the Developer Console on the OAuth page.
+client_secret - The secret that is associated with an application. It is used to redeem refresh tokens and should never be shared by a public client. Leaking this information is equivalent to leaking a password. This variable is called the Application secret in the Developer Console on the OAuth page.
+The code flow process is as follows:
+
+Your client application creates an authorization URL
+ that you provide to the seller who approves the permissions you requested. The authorization URL contacts the Authorize endpoint.
+The Authorize endpoint returns an authorization code.
+The client calls the ObtainToken endpoint and provides the client ID, client secret, and the authorization code.
+The ObtainToken endpoint returns an access token and a refresh token.
+A graphic showing the process flow for the OAuth code flow.
+
+PKCE flow
+The OAuth PKCE flow is designed for public clients that shouldn't store secret information in their application. The PKCE process removes the need to pass the client_secret and doesn't require a secure backend server. The PKCE flow adds two new terms:
+
+code_verifier - A unique random string generated by the client.
+code_challenge - A Base64-URL-encoded string of the SHA256 hash of the code verifier.
+The PKCE flow process is as follows:
+
+The client application creates an authorization URL that is the authorization request. The client application creates the code_verifier and uses the Base64-URL-encoding of its SHA256 hash to create the code_challenge. The authorization request calls the Authorize endpoint and includes the code_challenge. You provide this URL to the seller who approves the permissions you request.
+The Authorize endpoint returns an authorization code. The server retains the code_challenge.
+The client calls the ObtainToken endpoint and provides the client ID, code_verifier, and authorization code. The server verifies that the code_verifier is the same value as the value that was encrypted to create the code_challenge.
+The ObtainToken endpoint returns an access token and a single-use refresh token that expires in 90 days.
+A graphic showing the process flow for the OAuth PKCE flow.
+
+Determine which OAuth flow applies to your application
+If your application has a confidential client, one that is able to securely authenticate with an authorization server and is able to store the client_secret securely, you should use the OAuth code flow for your application. Using the OAuth code flow lets you receive multiple-use refresh tokens that don't expire.
+
+If you have a public client that is unable to use registered client secrets or an application running in a browser or on a mobile device, you must use the OAuth PKCE flow. You should also choose the OAuth PKCE flow if you have a native desktop application, a single-page web application, or a mobile application. Refresh tokens expire after 90 days using the OAuth PKCE flow and you don't have to store the client_secret.
+
+You can determine which OAuth flow to use by answering the following questions:
+
+Are you building a server application where you control the hosting? If yes, use the OAuth code flow.
+Are you building a single-purpose application where the application needs an access token? If yes, use the PKCE flow and use a short-lived token.
+Are you building a mobile application for installation on mobile devices around the world? If yes, use the PKCE flow and use a short-lived token.
+Important
+You cannot mix and match OAuth flows; you must choose either the code flow or the PKCE flow end to end.
+
+To learn how to set up a basic website that uses the OAuth code flow, see OAuth Walkthrough: Test Authorization with a Web Server. For more information about writing authentication code, see OAuth Best Practices.
+
+Webhooks
+A webhook is a subscription that notifies you when a Square event occurs. For more information about using webhooks, see Square Webhooks.
+
+The OAuth API supports the following webhook event:
+
+Event	Permission	Description
+oauth.authorization.revoked	N/A	Notifies an application whenever a seller revokes all access tokens and refresh tokens granted to the application.
+If you use the OAuth API to get authorization to manage a seller's resources, you should create a webhook that notifies you of the oauth.authorization.revoked event. It indicates that a seller has removed your application's access to their resources. For a complete list of Square webhook events, see Webhook Events Reference.
+
+Common errors
+Authorization errors are typically caused by typos or mismatched credentials (Sandbox versus Production credentials).
+
+Make sure you've updated placeholders and default values in the sample code with valid application credentials.
+Make sure you've configured your credentials correctly. For example, if you're testing calls in production, make sure you're not using Sandbox credentials.
+Make sure you're using the right credential type. For example, application IDs are used for OAuth API calls but access tokens are often used in other API calls.
+For REST calls, make sure you've set the Authorization header key to Bearer and a valid access token.
+
+/
+
+Dev Essentials
+/
+
+OAuth
+Create the Redirect URL and Square Authorization Page URL
+Applies to: OAuth API
+
+Learn how to create a URL that requests permissions and directs the seller to the authorization page.
+
+Overview
+To begin the OAuth process, you need to create two URLs. The first is the redirect URL, which points to your OAuth application that receives the authorization response and that manages the seller's access token, refresh token, and, in the case of the PKCE flow, the code_verifier and its associated authorization code.
+
+The second URL is the authorization URL, which you use to request permissions and to provide additional authorization information. This URL calls the Authorize endpoint, which allows the customer to approve your permissions request. You provide this URL to the seller who can grant the permissions you request. The response from this authorization page is sent to your redirect URL.
+
+Create the redirect URL
+The redirect URL is the endpoint for your application or web page that processes the seller authorization response and manages the seller's OAuth tokens. You need to add this URL to your application using the Developer Dashboard. The URL must exactly match the endpoint of your application that processes the seller authorization.
+
+There are several requirements for a production redirect URL. These include:
+
+The URL must use HTTPS.
+The endpoint must be able to process the GET response from the seller's authorization through the Square authorization web page. This includes securely storing the access and refresh tokens and the code_verifier if you're using the PKCE flow.
+To get your application credentials and set the redirect URL:
+
+Sign in to the Developer Dashboard.
+Choose Open for your production application. If you don't have an application set up, see Get Started.
+At the top of the page, set the mode to Production.
+In the left pane, choose OAuth.
+In the Application ID box, copy and save the application ID for use in the next section.
+In the Application Secret box, choose Show, and then copy and save the application secret for use in the next section.
+In the Redirect URL box, enter the URL that redirects the seller authorization to your production application.
+Choose Save.
+Use dynamic ports for PKCE redirect URLs
+The PKCE flow supports dynamic ports to create a redirect URL at runtime for mobile and desktop clients:
+
+Add the literal <port> as a placeholder for a port in the Redirect URL box in the Developer Dashboard (for example, http://localhost:<port>).
+
+Pass in the actual port in the redirect_url field for the Authorize
+ endpoint. For example:
+
+https://connect.squareup.com/oauth2/authorize?client_id={YOUR_APP_ID}&scope=MERCHANT_PROFILE_READ&redirect_url=http://localhost:8000.
+
+Create the authorization URL
+To begin the process of having a seller authorize your application to act on their behalf, you first create the authorization URL with specific parameters. The code flow and PKCE flow processes have different parameters. The completed URL looks similar to the following examples:
+
+Code flow
+
+https://connect.squareup.com/oauth2/authorize?client_id={YOUR_APP_ID}&scope=CUSTOMERS_WRITE+CUSTOMERS_READ&session=false&state=82201dd8d83d23cc8a48caf52b
+
+PKCE flow
+
+https://connect.squareup.com/oauth2/authorize?client_id={YOUR_APP_ID}&scope=CUSTOMERS_WRITE+CUSTOMERS_READ&session=false&redirect_url=<redirect_url>&code_challenge=<code_challenge>
+
+Important
+If you include code_challenge in the URL to the Authorize endpoint, you're committed to using the PKCE flow. This means you're required to pass in the code_verifier to the ObtainToken endpoint. If you don't include code_challenge in the URL to the Authorize endpoint, you're committed to using the code flow and you cannot include code_verifier in your request to the ObtainToken endpoint.
+
+The URL includes the following:
+
+Your application ID - In the URL, this is the client_id parameter.
+A list of permissions you want the seller to grant to your application - In the URL, this is the &scope parameter. Your application should only request permissions for APIs that your application calls and should be the least privileged permissions required by your application. For more information about scoping your permissions request, see the following section.
+A Square session login parameter - In the URL, this is the &session parameter. This parameter determines whether a seller must log in to the Square authorization page. For a production application, this parameter must be set to false so that the seller must log in. Many sellers have multiple Square accounts. Requiring the seller to log in helps ensure that the seller is authorizing your application for the correct Square account.
+A cross-site request forgery (CSRF) token - In the URL, this is the &state parameter. This parameter is a string that's passed to the Square authorization page and returned as a state parameter to the redirect URL defined for your application. A CSRF token is a unique, random, and unpredictable value generated by your application server. When the &state parameter is returned to your application's redirect URL, your application should verify the authenticity of the &state value. This technique helps mitigate CSRF attacks. For more information, see section 10.2 of the OAuth 2.0 protocol specification (RFC 6749).
+redirect_url - This is the redirect URL. You can specify the URL in the request or set the value in the Developer Dashboard.
+code_challenge - This value is used with the PKCE flow. It's generated by the client and is a string value encrypted using SHA-256 encryption.
+response_type - (optional) In the URL, this is the &response_type parameter. This parameter is required by the OAuth 2.0 protocol, but its value defaults to code so you don't need to specify it. The code value specifies that the authorization response includes a code parameter containing the authorization code. The token value is no longer supported.
+locale - (optional) In the URL, this is the &locale parameter. You can optionally pass a locale parameter to force the Square authorization page to present the page using a particular locale. The Square authorization page detects the locale automatically, so this parameter should only be used if your application can definitively determine the preferred locale and has a specific reason for doing so.
+You provide this URL to the seller. You can do so by creating the URL and sending it from your application, posting it on a web page, or providing it in an email or automated response. For more information about the authorization parameters, see Authorize.
+
+Set the scope parameter
+Set the scope to the least privileged permissions required for your application. The scope parameter is the set of permissions that your application is requesting on the seller's account. Your application should only request permissions for APIs that your application calls and should use the least privileged permissions required. For a complete list of OAuth permissions, see OAuth Permissions Reference.
+
+Important
+When you request authorization from a seller, record the permissions that you request. After the seller authorizes your request and you receive the authorization code, you cannot find what permissions are associated with the code or the access token you receive when you call ObtainToken.
+
+For example, suppose you're building a basic invoicing application that accepts payments from customers on behalf of the seller (CreatePayment), displays payments for customers and sellers (ListPayments and GetPayment), processes refunds (RefundPayment), and takes an application fee on payments. You need the following permissions:
+
+PAYMENTS_WRITE
+PAYMENTS_READ
+PAYMENTS_WRITE_ADDITIONAL_RECIPIENTS
+The last permission is required for CreatePayment calls if your application takes an application fee that's paid into your developer account. Some specific variations of a call require more permissions. Some calls, such as PayOrder (ORDERS_WRITE and PAYMENTS_WRITE), require multiple permissions. Each endpoint in the Square API Reference lists the permissions required to call it. The OAuth Permissions Reference lists all the permissions and the APIs and endpoints they apply to.
+
+If you add features to your application or integrate with other systems that require additional permissions, you must ask for those permissions with a new authorization request to the seller. Though you don't want to request more permissions than you need, you must consider what permissions you need for future integrations or for additional features your application might support in the future.
+
+If you don't set a scope (not recommended), the default is as follows:
+
+MERCHANT_PROFILE_READ
+PAYMENTS_READ
+BANK_ACCOUNTS_READ
+However, you shouldn't rely on the default scope. You should explicitly set the scope that your application requires.
+
+/
+
+Dev Essentials
+/
+
+OAuth
+Receive Seller Authorization and Manage Seller OAuth Tokens
+Applies to: OAuth API
+
+Learn how to create an application that receives the seller's OAuth authorization and manages the OAuth tokens.
+
+Overview
+The next stage in the OAuth authorization process is where the seller uses the authorization URL you provided and logs in to their Square seller account. Square shows an authorization page with the requested permissions and scope. After the seller accepts or denies the permissions, the page sends a GET response to the redirect URL you specified for your application.
+
+Requirements and limitations
+The application that's at the redirect URL endpoint must do the following:
+
+Parse the parameters that are returned in the seller authorization response.
+Use the authorization code in the response to call the OAuth API to obtain the seller's access and refresh tokens.
+Manage and use the access and refresh tokens securely.
+Encrypt the access and refresh tokens and store them securely.
+If your application is using the PKCE flow, you must retain the code_verifier that was used to obtain the authorization code. You submit the code_verifier along with the authorization code when calling ObtainToken.
+Verify that the token used for each API call is valid.
+Refresh the access token in a timely manner.
+If your application is using the PKCE flow, you must use the single-use refresh token within 90 days.
+Provide the seller with the ability to revoke the access and refresh tokens.
+Show the permissions granted by the access token to the seller and enable them to manage authorization.
+Ensure that API calls made with the seller's tokens can handle token-based errors appropriately.
+Handle the authorization response
+The seller can approve or deny your authorization request. Your web page or application endpoint that receives the authorization redirect must handle the Allow or Deny responses in the query string.
+
+If the seller chooses Allow, a production response URL looks like the following:
+
+https://example.com/callback.php?code=sq0cgb-xJPZ8rwCk7KfapZz815Grw&response_type=code&state=jf0weoif3dfsk04imofpdgmlksadfwmvmf4oip
+
+The URL returns the following parameters:
+
+state is the CSRF token your application passed in the state parameter for the Square authorization page. Use this value to verify that this is a valid request.
+response_type is code. This indicates that an authorization code was returned.
+code is the authorization code. Use this value when you call ObtainToken to get the access token and refresh token for the seller account. The value you provide to the ObtainToken call must match this value exactly. If you're using the PKCE flow, you must also include the code_verifier in the request to ObtainToken.
+If the seller chooses Deny, or there's an error, a production response URL looks like the following:
+
+http://example.com/callback.php?error=access_denied&error_description=user_denied&state=59192b1e9f3c448569e0008b6856da50#
+
+The URL returns the following parameters:
+
+state is the CSRF token your application passed in the state parameter for the Square authorization page.
+error is the error type. The access_denied value indicates that the seller denied the authorization request.
+error_description provides more details about the error.
+If the error is access_denied, you need to contact the seller to determine the reason they denied authorization. Your application should show a user-friendly page to tell the seller that authorization failed.
+
+Call the ObtainToken endpoint
+If the seller authorizes your set of permissions, the Authorize endpoint sends a response with an authorization code to your redirect URL. You must use the authorization code (code) to call the ObtainToken endpoint to get the seller's OAuth access token and refresh token. The authorization code expires 5 minutes after the Square authorization page generates the code. The value you include in the ObtainToken call must exactly match the authorization code you received. If the code expires before you get an access token, the seller must go to the Square authorization page again to create another authorization code.
+
+The request format to call ObtainToken differ between the code flow and PKCE flow.
+
+An ObtainToken request using the code flow looks like the following:
+
+
+
+curl https://connect.squareupsandbox.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2021-05-13' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_id": "<YOUR_APPLICATION_ID>",
+    "client_secret": "<YOUR_APPLICATION_SECRET>",
+    "code": "<THE_AUTHORIZATION_CODE_YOU_WERE_GIVEN>",
+    "grant_type": "authorization_code"
+  }'
+A response looks similar to the following:
+
+
+
+{
+  “access_token”: “<access_token>“,
+  “token_type”: “bearer”,
+  “expires_at”: “2022-06-03T22:19:44Z”,
+  “merchant_id”: “<merchant_id>“,
+  “refresh_token”: “<refresh_token>“,
+  “short_lived”: false
+}
+An ObtainToken request using the PKCE flow looks like the following:
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2022-04-20' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_id": "<YOUR_APPLICATION_ID>",
+    "grant_type": "authorization_code",
+    "redirect_url": "<THE REDIRECT URL>",
+    "code": "<THE_AUTHORIZATION_CODE_YOU_WERE_GIVEN>",
+    "code_verifier":"<THE CODE_VERIFIER YOU CREATED>"
+      }'
+A response looks similar to the following:
+
+
+
+{
+  “access_token”: “<access_token>“,
+  “token_type”: “bearer”,
+  “expires_at”: “2022-06-03T22:19:44Z”,
+  “merchant_id”: “<merchant_id>“,
+  “refresh_token”: “<refresh_token>“,
+  “short_lived”: false
+  “refresh_token_expires_at”: “2022-08-03T22:19:44Z”
+}
+Refresh tokens returns by the PKCE flow can only be used once and expire in 90 days.
+
+When you have successfully received the seller's access token and refresh token, you must store the values securely.
+
+Manage, use, and store OAuth tokens securely
+OAuth access tokens, refresh tokens, and the application secret all have privileged access (or potential to get privileged access) to seller resources. You should use them in a secure environment and protect access to them. Follow these best practices:
+
+OAuth operations that use a private client should be performed on a secure application server. This includes, for example, calls to ObtainToken to obtain the original OAuth access token and refresh token, subsequent calls to get a new OAuth access token using a refresh token, generating and validating the state parameter, encrypting the tokens and application secret, and revoking a token.
+Never store the application secret, access token, or refresh token in a mobile application or on any public client. Use the PKCE flow for these scenarios.
+OAuth access tokens and refresh tokens should be stored encrypted in a secure database or keychain. Your application should use a strong encryption standard such as AES. The production encryption keys shouldn't be accessible to database administrators, business analysts, developers, or anyone who doesn't need them. The tokens that these keys protect can be used to perform actions on behalf of the seller and should be guarded appropriately. The encryption keys shouldn't be stored in source control and should only be accessible by server administrators.
+When you request authorization from a seller, record the permissions that you request. After the seller authorizes your request and you receive the authorization code, you cannot find what permissions are associated with the code or the access token you receive when you call ObtainToken.
+Warning
+Never store your credentials or access tokens in your version control system. The .env file is included in the .gitignore project to help prevent uploading confidential information.
+
+You should never put the application secret in your source code. Instead, encrypt the secret and use an environment variable to reference the secret in your application.
+
+Ensure that tokens are valid
+Submitting an API request without a valid OAuth access token results in a poor experience for sellers and potentially their customers. In some cases, a seller might be prevented from taking payments. An OAuth access token can be invalid for two main reasons: expiration and revocation.
+
+Your application should automatically renew OAuth access tokens every 7 days or less, regardless of whether the seller is actively interacting with your application. For more information about refreshing an access token, see OAuth Best Practices.
+
+Expiration
+An OAuth access token expires after 30 days. If your application doesn't get a new access token, it cannot make calls on behalf of the seller. This can happen if your application doesn't have a token refresh process, but it can also happen if the call to ObtainToken fails and your application doesn't detect the failure and doesn't retry.
+
+To ensure that tokens remain in a valid state, Square requires all partner applications to renew at a frequent interval.
+
+Square recommends that your application automatically renew OAuth access tokens every 7 days or less, regardless of whether the seller is actively interacting with your application. Renewing every 7 days or less provides sufficient time to discover and resolve errors. If your application only attempts to refresh tokens near the 30-day expiration date, it increases the risk of missing a failed token refresh and creating a poor experience for sellers or their customers.
+
+Your application should check tokens when they're retrieved from your database to see whether they're older than 8 days. If this check fails, it should generate a notification (paging or other alerting mechanism) so that you can address any issues with your renewal logic. Silent token renewal failures result in breaking your application integration and potentially cause an outage for your sellers or their customers.
+
+Refresh tokens used with PKCE are single-use tokens and expire in 90 days.
+
+Revocation
+An OAuth access token can be revoked in two ways:
+
+The seller can disconnect the application through My Applications in the Square Dashboard. Disconnecting an application calls RevokeToken to revoke all OAuth tokens for the seller.
+Your application can call RevokeToken to revoke a particular OAuth token or all OAuth tokens for a seller account.
+To ensure that a token is valid and not revoked, call ListLocations and check the response to confirm validity.
+
+Show token status and enable sellers to manage authorization
+Your application must provide a mechanism for sellers to view the status of their OAuth tokens and manage the authorization for your application. Typically, this is done with a settings/configuration dashboard in your application.
+
+Your application must accurately show the seller's access token status with Square. Access token status must always be accurate and indicate the correct state of the access token (valid, expired, or revoked). Using the recommendation method in the previous section, your application can check the validity of the token by calling ListLocations and checking the response.
+
+Your application must let the seller revoke the access token. You revoke access tokens using RevokeToken. For more information about revoking an access token, see Refresh, Revoke, and Limit the Scope of OAuth Tokens.
+
+Handle token-based errors
+When your application uses an access token to call a Square API, OAuth-related errors can occur if a token is expired, is revoked, or has insufficient scope (unauthorized). Your application should handle these error codes and display a customer-friendly message that clearly communicates the error to the seller, their customer, or both. Errors include:
+
+ACCESS_TOKEN_EXPIRED
+ACCESS_TOKEN_REVOKED
+UNAUTHORIZED
+Square retains expired access tokens for a limited time. During this time, the Square API returns the ACCESS_TOKEN_EXPIRED error. After that time, the Square API returns an UNAUTHORIZED error.
+
+Square API calls that return the UNAUTHORIZED error aren't cases of insufficient scope. Square API calls with insufficient scope return a 403 FORBIDDEN error.
+
+/
+
+Dev Essentials
+/
+
+OAuth
+Refresh, Revoke, and Limit the Scope of OAuth Tokens
+Applies to: OAuth API
+ | Locations API
+
+Learn how to use the OAuth API to manage the scope of a seller's access tokens.
+
+Overview
+When you have the access and refresh tokens for a seller, you must be able to refresh the access token, revoke the tokens, and limit the scope of the tokens if required.
+
+Your application must also provide a mechanism for sellers to view and manage the status of their OAuth tokens and manage the authorization for your application. Typically, this is done with a settings/configuration dashboard in your application.
+
+Your application must accurately show the status of the seller's OAuth access token with Square. The status of the OAuth access token must always be accurate and indicate the correct state of the access token (valid, expired, or revoked). Your application can check the validity of the token by calling ListLocations and checking the response.
+
+Refresh the access token
+Your application should be able to refresh the access token before it expires in 30 days. Square recommends that your application automatically renew OAuth access tokens every 7 days or less, regardless of whether the seller is actively interacting with your application. Renewing every 7 days or less provides sufficient time to discover and resolve errors. If your application only attempts to refresh tokens near the 30-day expiration date, it increases the risk of missing a failed token refresh and creating a poor experience for sellers or their customers.
+
+Your application should check access tokens when they're retrieved from your database to see whether they're older than 8 days. If this check fails, it should generate a notification (paging or other alerting mechanism) so that you can address any issues with your renewal logic. Silent token renewal failures result in breaking your application integration and potentially causing an outage for your sellers or their customers. For more best practice ideas, see OAuth Best Practices.
+
+Refresh token examples
+The request format to call ObtainToken to get a refresh token differs between the code flow and PKCE flow.
+
+Code flow refresh token request:
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2022-04-20' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_id": "<YOUR_APPLICATION_ID>",
+    "grant_type": "refresh_token",
+    "redirect_url": "<THE REDIRECT URL>",
+    "client_secret": "<YOUR_APPLICATION_SECRET>",
+    "refresh_token": "<CURRENT REFRESH TOKEN>"
+  }'
+Code flow refresh token response:
+
+
+
+{
+  "access_token": "<access_token>",
+  "token_type": "bearer",
+  "expires_at": "2022-06-03T22:19:44Z",
+  "merchant_id": "<merchant_id>",
+  "refresh_token": "<SAME REFRESH TOKEN AS REQUEST>",
+  "short_lived": false
+}
+PKCE flow refresh token request:
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2022-04-20' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_id": "<YOUR_APPLICATION_ID>",
+    "grant_type": "refresh_token",
+    "redirect_url": "<THE REDIRECT URL>",
+    "refresh_token": "<CURRENT REFRESH TOKEN>"
+  }'
+PKCE flow refresh token response:
+
+
+
+{
+  "access_token": "<access_token>",
+  "token_type": "bearer",
+  "expires_at": "2022-06-03T22:19:44Z",
+  "merchant_id": "<merchant_id>",
+  "refresh_token": "<NEW REFRESH TOKEN>",
+  “refresh_token_expires_at”: “2022-08-03T22:19:44Z”
+  "short_lived": false
+}
+A successful call to ObtainToken using the refresh token returns a 200 response code and includes information about the new access token. Use this new access token for calling the Square APIs on the seller's behalf.
+
+Revoke the access token
+Your application should give the seller the ability to manage their OAuth tokens, including the ability to revoke the OAuth tokens if they choose to. Revoking the OAuth tokens stops your ability to manage resources on behalf of the seller. Your application can call the RevokeToken endpoint to revoke the seller token.
+
+To revoke an access token, you call RevokeToken with the following information:
+
+client_secret - Your application's production application secret.
+access_token - The seller's access token that you want to revoke. You can specify the access token or the merchant_id; you don't need to specify both.
+client_id - Your application's production application ID.
+grant_type - refresh_token.
+refresh_token - The seller's refresh token.
+A call to RevokeToken to revoke an access token looks similar to the following:
+
+
+
+curl https://connect.squareup.com/oauth2/revoke \
+  -X POST \
+  -H 'Square-Version: 2021-07-21' \
+  -H 'Authorization: Client <YOUR_APPLICATION_SECRET>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "access_token": "EAAAEBfiiBO_WTd91g0qlxam5allf6KWIUWvN3U7_-y9PyLR9-_rZbSPMwsbAmb0",
+    "client_id": "sandbox-sq0idb-fGFs-gh_Mm7jMo5r-MZrRA",
+    "revoke_only_access_token": false
+  }'
+A successful call to RevokeToken returns a 200 response code and looks similar to the following:
+
+
+
+cache-control: max-age=0, private, must-revalidate
+content-encoding: gzip
+content-type: application/json
+date: Fri, 13 Aug 2021 18:24:03 GMT
+square-version: 2021-07-21
+
+{
+  "success": true
+}
+Revoke authorization for a single OAuth access token
+The default behavior for the Square RevokeToken endpoint revokes the entire authorization for you to act on the behalf of a seller. However, you might need to revoke a specific access token without terminating the entire seller authorization. For example, if an access token is compromised, you want to revoke the compromised token and generate a new one without requiring a new seller authorization.
+
+The revoke_only_access_token is an optional field in the RevokeToken endpoint. This field lets you revoke a specified OAuth access token without terminating the entire authorization.
+
+A call to RevokeToken to revoke a single access token, but not terminate authorization, looks similar to the following:
+
+
+
+curl https://connect.squareup.com/oauth2/revoke \
+  -X POST \
+  -H 'Square-Version: 2020-11-18' \
+  -H 'Authorization: Client <YOUR_APPLICATION_SECRET>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "access_token": "ACCESS_TOKEN",
+    "client_id": "CLIENT_ID",
+    "revoke_only_access_token": true
+  }'
+A successful call to RevokeToken returns a 200 response code and looks similar to the following:
+
+
+
+{
+  "success": true
+}
+Modify the scope and duration of OAuth access tokens
+The default expiration for OAuth access tokens was 30 days because credentials were traditionally used from a tightly controlled access environment such as a secure server. As developers expand their use cases to include loosely controlled access environments such as web browsers, mobile applications, and public clients, there's a need for credentials with limited permissions and a shorter lifespan to prevent errors and mitigate risk. The PKCE flow is part of this process. The PKCE flow is designed for public clients and single-page web applications and uses a key exchange process to obtain an access token and uses single-use refresh tokens. For a complete explanation of the PKCE flow, see PKCE flow.
+
+Create limited scope OAuth access tokens
+If you don't need all the permissions granted by an access token, you can create a new access token that has a reduced set of permissions from the ones granted when the seller approved your authorization. You do this by creating a new access token for the seller using the optional scopes field on the ObtainToken endpoint.
+
+For example, if a seller granted four permissions including MERCHANT_PROFILE_READ, PAYMENTS_READ, PAYMENTS_WRITE, and BANK_ACCOUNTS_READ and you find that you only need two permissions (MERCHANT_PROFILE_READ and PAYMENTS_READ), you can create a new access token with just those two permissions.
+
+A call to ObtainToken to limit the scope of an access token looks similar to the following:
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2020-11-18' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "scopes": [
+      "MERCHANT_PROFILE_READ",
+      "PAYMENTS_READ"
+    ],
+    "grant_type": "refresh_token",
+    "refresh_token": "REFRESH_TOKEN",
+    "client_secret": "APPLICATION_SECRET",
+    "client_id": "APPLICATION_ID"
+  }'
+The API response doesn't include a list of scopes. If a 200 response is returned, it can be assumed that the scopes have been added to the newly created OAuth access token. A successful call to ObtainToken returns a 200 response code and looks similar to the following:
+
+
+
+{
+  "access_token": "ACCESS_TOKEN",
+  "token_type": "bearer",
+  "expires_at": "2021-01-02T00:14:15Z",
+  "merchant_id": "MERCHANT_ID",
+  "refresh_token": "REFRESH_TOKEN",
+  "short_lived": false
+}
+Important
+The newly created OAuth access token cannot be viewed in the Developer Console. Your application must store this new token for future use.
+
+Create short-lived OAuth access tokens
+The default expiration for OAuth access tokens is 30 days. A 30-day lifespan isn't appropriate for use in less secure web or mobile clients. The 30-day expiration increases the risk duration for exposure and abuse. When working within loosely controlled access environments such as web browsers or mobile clients, you might prefer a credential with a shorter lifespan to prevent errors and mitigate risk.
+
+The short_lived optional field within the ObtainToken endpoint lets you generate a short-lived access token that expires 24 hours after creation.
+
+To create an access token that expires in 24 hours, call ObtainToken and set the short_lived field to true. The call looks similar to the following:
+
+
+
+curl https://connect.squareup.com/oauth2/token \
+  -X POST \
+  -H 'Square-Version: 2021-08-18' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "grant_type": "refresh_token",
+    "refresh_token": "REFRESH_TOKEN",
+    "client_secret": "APPLICATION_SECRET",
+    "client_id": "APPLICATION_ID",
+    "short_lived": true
+  }'
+A successful call to ObtainToken returns a 200 response code and looks similar to the following:
+
+
+
+{
+  "access_token": "ACCESS_TOKEN",
+  "token_type": "bearer",
+  "expires_at": "2020-12-04T00:16:17Z",
+  "merchant_id": "MERCHANT_ID",
+  "refresh_token": "REFRESH_TOKEN",
+  "short_lived": true
+}
+Note
+The lifespan of the short-lived access token cannot be customized. It always has a 24-hour lifespan.
+
+OAuth Walkthrough: Test Authorization with a Web Server
+Applies to: OAuth API | Payments API
+
+Learn how to build an OAuth API flow to authorize your application to access a Square account.
+
+Overview
+You can test your application or website to receive and manage OAuth tokens using the Square Sandbox. The Sandbox lets you test each of the three stages of OAuth (described in this topic) without using production seller accounts.
+
+Use this walkthrough to:
+
+Direct the seller to the Square authorization page. You can simulate getting authorization from a seller's Sandbox test account.
+Receive and retain OAuth tokens. The Sandbox application receives the Sandbox test account authorization and obtains the OAuth access token and refresh token. The walkthrough application doesn't retain the OAuth tokens or store them securely. Retaining and securely storing OAuth tokens must be done in production.
+Refresh and revoke OAuth tokens. OAuth tokens from Sandbox test accounts act just like production OAuth tokens. Therefore, you can test refreshing the authorization using the refresh token. You can also test revoking the authorization.
+Implementing the Square OAuth using the code flow is a three-step process:
+
+Create a URL link to the Square authorization page that includes your application ID and the permissions you want the seller to grant to your application. Give the seller the link.
+Create a URL to your application that you use as your redirect URL. The redirect URL points to the application that receives the authorization code when the seller approves your authorization request and uses it to get the OAuth tokens. When your application is in place at the redirect URL, add the redirect URL to your application using the Developer Console.
+Get the access token and refresh token. Maintain access using the refresh token. An OAuth access token expires after 30 days.
+Requirements and limitations
+Before you start, note the following:
+
+You must have an application created using the Developer Console. You use the application ID and OAuth secret during this walkthrough. If you don't have an application that you created using the Developer Console, see Get Started.
+This walkthrough uses a PHP web server project. You must download the project, the PHP Square SDK, and Composer. For complete installation instructions, see the project readme. After completing this walkthrough, you can explore similar GitHub examples in other languages. For more information, see connect-api-examples.
+The Square Sandbox is a testing environment. The Sandbox doesn't work with production Square accounts. The Sandbox lets you see how OAuth works with a developer test account and how a seller account interacts with the OAuth process, without impacting your production environment.
+OAuth process
+There are a few differences between using the OAuth process in Sandbox and in production. These include:
+
+Using the Sandbox and a Sandbox test account, you can use localhost and HTTP. In production, you cannot use localhost and you must use HTTPS.
+In production, the session parameter for the authorization page URL must be set to false.
+In the Sandbox, the application ID has a prefix of "sandbox".
+In the Sandbox, the application secret has a prefix of "sandbox".
+Sandbox and production endpoints have different base URLs:
+Sandbox: https://connect.squareupsandbox.com
+Production: https://connect.squareup.com
+Make sure you're using your production ID, secret, and base URL when in production.
+1. Get your application credentials and set the redirect URL
+Sign in to the Developer Console.
+
+Choose Open for an application. If you don't have an application set up, see Get Started.
+
+At the top of the page, set the dashboard mode to Sandbox.
+
+In the left pane, choose OAuth.
+
+In the Application ID box, copy and save the application ID.
+
+In the Application Secret box, choose Show, and then copy and save the application secret.
+
+In the Redirect URL box, enter the URL that redirects the seller authorization to your application. For this walkthrough using the Sandbox, use this value: http://localhost:8000/callback.php
+
+Important
+For this walkthrough using the Sandbox, you can use HTTP for localhost. A production account must use an actual web server implementation and must connect using HTTPS.
+
+Choose Save.
+
+2. Install the PHP project template
+For this walkthrough, you use code that creates a simple web server that responds to the seller authorization and gets the OAuth tokens. Do the following to set up the project. You can also follow the instructions in the README.md file. The connect-api-examples repository contains the OAuth PHP project used for this walkthrough. Although the code is different for the other OAuth SDK samples, the same high-level workflow and concepts described in this topic apply to them.
+
+Download the connect-api-examples project using one of these options:
+
+Download the ZIP file and unzip the content to a local directory.
+Clone the GitHub repository to a local directory.
+The README.md file has you install Composer as part of the project installation.
+Open a command line.
+
+In the project directory, change to the connect-examples/oauth/php/ subdirectory.
+
+Review the directory that has the following files:
+
+Request_token.php is a web page with a link to the Square authorization page so a seller account can authorize your application.
+Callback.php is the target that the authorization page redirects to and where your application gets an OAuth token. The Square authorization page sends the authorization code to the callback endpoint at your application's redirect URL. Your callback uses the application ID, application secret, and authorization code to call the ObtainToken endpoint to get the OAuth access tokens.
+Messages.php contains helper functions to give easy access to tokens and display error messages.
+In the directory, create the .env file by following the format shown in the .env.example file. Enter the credentials and IDs for your application.
+
+Important
+If you're using an Apple Mac, file names beginning with "." aren't visible by default. To view hidden files in Terminal, use the 'ls -a' command. To view hidden files in Finder, hold down Cmd + Shift + .(dot).
+
+Install the Square PHP SDK in your project directory. Follow the installation instructions.
+
+Run the following command to start the server:
+
+
+php -S localhost:8000
+Verify that the PHP server is running.
+
+3. Set up a seller test account and simulate the seller authorization
+Your Square developer account comes with a default test account in the Sandbox. To simulate third-party application development, you need to create a second Sandbox account to act as a seller account.
+
+In the Sandbox, the seller must be signed in to see the Square authorization page. Sign in to a seller test account by opening the Square Dashboard. In production, you can also control whether you force the seller to sign in explicitly by setting the session parameter to false (recommended).
+
+Create a Sandbox account as a seller test account:
+
+Open the Developer Console.
+
+In the left pane, choose Sandbox test accounts.
+
+Choose New sandbox test account.
+
+In the Account Name box, enter Seller Test Account.
+
+In the Country box, choose any country.
+
+Clear the Automatically create authorizations for all my current apps checkbox.
+
+Choose Create.
+
+The Developer Console should look like the following:
+
+A screenshot showing what the Developer Console should look like after creating a new Sandbox test account.
+
+Choose Open in Square Dashboard for the new seller account. This opens the Square Dashboard for the account. Leave this page open in your browser.
+
+Open a new browser window and enter http://localhost:8000/request_token.php. You should see the following:
+
+A graphic showing the Authorize button.
+
+Important
+When testing in the Sandbox, you need to have a Square Dashboard open so the request_token.php code can send the request to it. You're simulating what the seller does in a production environment when they receive the authorization request and approve it.
+
+Choose the Authorize button.
+
+The page shows the authorization request for the new account. Choose Allow.
+
+The page shows that the authorization succeeded. The callback.php code got the authorization code from the seller's authorization, submitted the OAuth API ObtainToken call, and received the access token and refresh token.
+
+The authorization returns the following parameters:
+
+state is the CSRF token your application passed in the state parameter for the Square authorization page. Use this value to verify that this is a valid request.
+response_type is code. This indicates that an authorization code was returned.
+code is the authorization code. Use this value when you call ObtainToken to get the access token and refresh token for the seller account. The value you provide to the ObtainToken call must match this value exactly.
+For more information about the values returned in the seller authorization, see Receive Seller Authorization and Manage Seller OAuth Tokens.
+
+You've now completed the OAuth process by obtaining the access token and refresh token for the test seller. The next steps show you how to use the access token and refresh token.
+
+4. Use the seller access token to call a Square API on behalf of the seller
+After you get the seller OAuth tokens, use the access token to call the Square API endpoints that your application has permissions for. To keep this simple, use API Explorer to call the CreatePayment endpoint to take a $100.00 payment, with a $5 application fee going to your Square developer account and $95 going to the seller.
+
+Go to API Explorer.
+
+Make sure Sandbox is selected at the top of the page, paste the access token that you obtained in the OAuth process into the Access token box, and then choose Save.
+
+API Explorer uses this access token to make calls on behalf of the seller.
+
+Set the following parameters in the body:
+
+For amount_money, choose Add, enter 10000 for the amount, and then set the currency to the country you selected when you created your Square account.
+
+Note that money is represented in the lowest denomination for a currency, which for USD is cents. So the amount of 10000 is $100.00.
+
+For idempotency_key, choose Generate to create a unique value to ensure that this payment is only made once. For more information, see Idempotency.
+
+For source_id, choose cnon:card-nonce-ok. This simulates a card payment token that represents a credit card that can be used for payment. For more information about card tokens, see Online Payment Solutions.
+
+For app_fee_money, choose Add, enter 500 for amount, and then set the currency to your Square account country.
+
+A screenshot showing a CreatePayment request in API Explorer.
+
+Choose Run Request. The Response box displays a 200 response code and returns details about the payment in the body of the response. The payment has an id value that you can use to identify this particular payment when calling ListPayments or you can get it directly using GetPayment.
+
+A screenshot showing the details of a response when a request is made using API Explorer.
+
+You've successfully taken a payment using the Square API on behalf of a seller. Look at the Square Dashboard to see what it looks like from the seller's point of view.
+
+Open the Developer Console, find the seller test account you created earlier in the Sandbox Test Accounts section, and then choose Open.
+
+In the Sandbox Square Dashboard, choose Transactions in the left pane, and then choose the most recent transaction. The transaction details appear in a pane on the right.
+
+A screenshot showing the details of a transaction in the Square Dashboard.
+
+You see the $100 payment that was completed and the $5 application fee that your application collected and credited to your Sandbox developer account.
+
+In the Other row, you see the $5.00 application fee from the CreatePayment call.
+
+5. Refresh the access token
+When you've completed the previous step, you know that you can use the seller's OAuth access token to make API calls on their behalf. Your application should be able to refresh the access token before it expires in 30 days. To keep this simple, use API Explorer to call the ObtainToken endpoint to refresh the seller token.
+
+Go to Square API Explorer.
+Make sure Sandbox is selected at the top of the page, paste your application's access token into the Access token box, and then choose Save.
+Set the following parameters in the body:
+For client_id, enter your application's Sandbox application ID.
+For client_secret, enter the Sandbox application secret for your application.
+For grant_type, enter refresh_token.
+For refresh_token, enter the seller's OAuth refresh token.
+Choose Run Request. The Response box displays a 200 response code and returns information about the new access token. Use this new access token to call the Square APIs on the seller's behalf.
+6. Revoke the access token
+Your application should give the seller the ability to revoke the access token if they choose to. To keep this simple, use API Explorer to call the RevokeToken endpoint to revoke the seller token.
+
+Go to API Explorer.
+Make sure Sandbox is selected at the top of the page, paste your application's access token into the Access token box, and then choose Save.
+Set the following parameters in the body:
+For client_secret, enter the Sandbox application secret for your application.
+In Body, for access_token, enter the seller's OAuth access token.
+For client_id, enter your application's Sandbox application ID.
+Choose Run Request. The Response box displays a 200 response code and returns "success":true.
+Create a link to the Square authorization page
+The request_token.php code creates the URL link to the Square authorization page that you give to the seller so they can authorize your application. The code uses your developer application ID and secret and requests several permissions that are then incorporated into the URL. The permissions in the list are separated by a URL-encoded space (%20 or +).
+
+The md5 function generates a random string that is stored in the session cookie and passed in the state parameter. The state parameter is returned by the Square authorization page. The callback compares the state value with the string stored in the session cookie and rejects the request if they don't match. The state parameter helps protect against cross-site request forgery (CSRF).
+
+The session parameter is omitted because the Sandbox only supports a default setting of true. For production, this value should be false.
+
+The {APPLICATION_ID} placeholder value for the client_id parameter is the Sandbox application ID you got from the Developer Console for your application.
+
+The completed URL looks like the following. For a complete review of the parameters used in the URL, see Create the Redirect URL and Square Authorization Page URL.
+
+
+https://squareupsandbox.com/oauth2/authorize?client_id={APPLICATION_ID}&scope=ITEMS_READ+MERCHANT_PROFILE_READ+PAYMENTS_WRITE_ADDITIONAL_RECIPIENTS+PAYMENTS_WRITE+PAYMENTS_READ&state=0499178ad6fdf1946bcb184aeae355cdbf90fed7faf60dde36e35de6d2d91b09
+
+
+<?php
+  session_start();
+  if (empty($_SESSION['auth_state'])) {
+    $_SESSION['auth_state'] = bin2hex(random_bytes(32));
+  }
+?>
+<link rel="stylesheet" href="public/style.css" type="text/css">
+<meta name="viewport" content="width=device-width">
+<?php
+require 'vendor/autoload.php';
+require_once('messages.php');
+
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::create(__DIR__);
+$dotenv->load();
+
+// Specify the permissions and url encode the spaced separated list.
+$permissions = urlencode(
+                  "ITEMS_READ " . 
+                  "MERCHANT_PROFILE_READ " .
+                  "PAYMENTS_WRITE_ADDITIONAL_RECIPIENTS " .
+                  "PAYMENTS_WRITE " .
+                  "PAYMENTS_READ"
+               );
+
+// Set the Auth_State cookie with a random md5 string to protect against cross-site request forgery.
+// Auth_State will expire in 60 seconds (1 mins) after the page is loaded.
+$application_id = getenv('SQ_APPLICATION_ID');    
+$environment =  getenv('SQ_ENVIRONMENT');
+
+if ($environment == "sandbox") {
+  $base_url = "https://connect.squareupsandbox.com";
+} else if ($environment == "production") {
+  $base_url = "https://connect.squareup.com";
+} else {
+  displayError("Unsupported SQ_ENVIRONMENT", "Set the SQ_ENVIRONMENT variable in .env file to 'sandbox' or 'production'.");
+}
+
+// Display the OAuth link.
+echo '
+<div class="wrapper">
+  <a class="btn"
+   href="' . $base_url . "/oauth2/authorize" .
+     '?client_id=' . $application_id .
+     '&scope=' . $permissions .
+     '&state=' . $_SESSION['auth_state'] .'">
+     <strong>Authorize</strong>
+  </a>
+</div>';
+?>
+
+Exchange the authorization code for an OAuth token
+The callback.php code parses the query string that is returned after the seller allows (or denies) your application the requested permissions the Square authorization page redirects to the redirect URL. This is the URL that you set on the OAuth page of your application in the Developer Console. The POST request on your callback page includes a query string with an authorization code or a denial error.
+
+The code block parses the query string. If there's an authorization code, the obtainOAuthToken function is called to exchange the authorization code for OAuth tokens.
+
+The code block performs three functions:
+
+Validates the state parameter - The first if statement checks the state parameter against the value stored in the cookie. If the values don't match, the displayStateError function is called to display a message indicating that the state check failed and this block is exited.
+Checks for authorization - If the state check succeeds, the block checks for the response_type parameter. If the response_type parameter value is code, an authorization code is returned in the code parameter.
+Calls ObtainToken to get the access and refresh tokens - The obtainOAuthToken function takes the authorization code and calls the ObtainToken endpoint to get the OAuth access token and refresh token. The ObtainToken endpoint takes your application ID, your application secret, a grant_type of authorization_code, and the authorization code. For this walkthrough, these tokens are displayed on the web page so you can get them easily. In production, you should never display the tokens. Instead, you should encrypt them and store them securely. For more information, see OAuth Best Practices.
+If there's no response_type parameter set, error states are handled (including the case where the seller chooses Deny) and an error message is displayed.
+
+
+
+<?php
+  session_start();
+?>
+<link rel="stylesheet" href="public/style.css" type="text/css">
+<?php
+require 'vendor/autoload.php';
+require_once('messages.php');
+
+use Square\Exceptions\ApiException;
+use Square\SquareClient;
+use Square\Environment;
+use Square\Models\ObtainTokenRequest;
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::create(__DIR__);
+$dotenv->load();
+
+// The obtainOAuthToken function shows you how to obtain an OAuth access token
+// with the OAuth API with the authorization code returned to OAuth callback.
+function obtainOAuthToken($authorizationCode) {
+  // Initialize Square PHP SDK OAuth API client.
+  $environment = getenv('SQ_ENVIRONMENT') == "sandbox" ? Environment::SANDBOX : Environment::PRODUCTION;
+  $apiClient = new SquareClient([
+    'environment' => $environment
+  ]);
+  $oauthApi = $apiClient->getOAuthApi();
+
+  // Initialize the request parameters for the ObtainToken request.
+  $body_grantType = 'authorization_code';
+  $body = new ObtainTokenRequest(
+    getenv('SQ_APPLICATION_ID'),
+    getenv('SQ_APPLICATION_SECRET'),
+    $body_grantType
+  );
+  $body->setCode($authorizationCode);
+
+  // Call obtainToken endpoint to get the OAuth tokens.
+  try {
+      $response = $oauthApi->obtainToken($body);
+
+      if ($response->isError()) {
+        $code = $response->getErrors()[0]->getCode();
+        $category = $response->getErrors()[0]->getCategory();
+        $detail = $response->getErrors()[0]->getDetail();
+
+        throw new Exception("Error Processing Request: obtainToken failed!\n" . $code . "\n" . $category . "\n" . $detail, 1);
+      }
+  } catch (ApiException $e) {
+      error_log($e->getMessage());
+      error_log($e->getHttpResponse()->getRawBody());
+      throw new Exception("Error Processing Request: obtainToken failed!\n" . $e->getMessage() . "\n" . $e->getHttpResponse()->getRawBody(), 1);
+  }
+
+  // Extract the tokens from the response.
+  $accessToken = $response->getResult()->getAccessToken();
+  $refreshToken = $response->getResult()->getRefreshToken();
+  $expiresAt = $response->getResult()->getExpiresAt();
+  $merchantId = $response->getResult()->getMerchantId();
+
+  // Return the tokens along with the expiry date/time and merchant ID.
+  return array($accessToken, $refreshToken, $expiresAt, $merchantId);
+}
+
+// Handle the response.
+try {
+    // Verify the state to protect against cross-site request forgery.
+    if ($_SESSION["auth_state"] !== $_GET['state']) {
+      displayStateError();
+      return;
+    }
+
+    // When the response_type is "code", the seller clicked Allow
+    // and the authorization page returned the auth tokens.
+    if ("code" === $_GET["response_type"]) {
+      // Get the authorization code and use it to call the obtainOAuthToken wrapper function.
+      $authorizationCode = $_GET['code'];
+      list($accessToken, $refreshToken, $expiresAt, $merchantId) = obtainOAuthToken($authorizationCode);
+      // Because we want to keep things simple and we're using Sandbox, 
+      // we call a function that writes the tokens to the page so we can easily copy and use them directly.
+      // In production, you should never write tokens to the page. You should encrypt the tokens and handle them securely.
+      writeTokensOnSuccess($accessToken, $refreshToken, $expiresAt, $merchantId);
+    }
+    elseif ($_GET['error']) {
+      // Check to see if the seller clicked the Deny button and handle it as a special case.
+      if(("access_denied" === $_GET["error"]) && ("user_denied" === $_GET["error_description"])) {
+        displayError("Authorization denied", "You chose to deny access to the app.");
+      }
+      // Display the error and description for all other errors.
+      else {
+        displayError($_GET["error"], $_GET["error_description"]);
+      }
+    }
+    else {
+      // No recognizable parameters were returned.
+      displayError("Unknown parameters", "Expected parameters weren't returned");
+    }
+} catch (Exception $e) {
+  // If the obtainToken call fails, you'll fall through to here.
+  displayError("Exception", $e->getMessage()); 
+}
+
+?>
+
+Move OAuth from the Sandbox to Production
+Applies to: OAuth API
+
+Learn how to move an application from the Square Sandbox to a production environment.
+
+Overview
+When your application that uses OAuth 2.0 to perform operations on behalf of Square seller accounts is ready for production, there are several tasks you must complete. These tasks are designed to strengthen the safety of the OAuth flow and give the seller a better sign-in experience. In addition, review the Square OAuth Best Practices before moving an application to production.
+
+If your application relies on a public client, regardless of whether it's a mobile application, single-page web application, or relies on a web browser, you should use the PKCE flow. Public clients can be decompiled and credentials such as the client_secret can be easily obtained. The PKCE flow process doesn't rely on the client_secret being stored on the client. For more information, see PKCE flow.
+
+Important
+Partner developers must not request nor use personal access tokens from the Square sellers who use their applications. Personal access tokens never expire and they have all permissions associated with the account owner. OAuth access tokens should be used instead to access seller resources.
+
+Square authorization page parameters
+A seller must have an account within the partner platform and have authenticated with that platform before being allowed to start the Square OAuth flow and authorize access to their Square account.
+
+The following requirements ensure a secure authorization experience:
+
+Create a redirect URL for production that uses HTTPS. This should point to your OAuth application that receives the authorization response and that manages and stores OAuth tokens.
+Create a URL that you provide to the seller to access the Square authorization page, which grants you a set of permissions to use on the seller's behalf.
+Pass all needed parameters to the Square authorization page:
+client_id - The client_id field must be set to the production application ID.
+
+scope - The scope parameter is the permissions that your application is requesting for the seller's account. Only request permissions for APIs that your application calls. These are known as in-scope permissions. If the correct permissions aren't requested, API requests can fail with an INSUFFICIENT_SCOPES error. Make sure your application has the needed permissions before moving to production.
+
+An out-of-scope permission request is where the application is requesting permission for an API that isn't used. The returned access code gives too broad an access to a Square seller account, which can be a security risk. An example of an out-of-scope permission request is an application that lets a seller accept payments with the Square Web Payments SDK but doesn't create, update, or remove customers. The application is requesting CUSTOMERS_WRITE permission, which is an out-of-scope request.
+
+session - The session parameter directs the Square authorization page to use the logged-in seller Square session, thereby removing the requirement to sign in to a Square account. Many sellers have multiple Square accounts and should be forced to sign in to one of them to ensure that they're authorizing your application for the correct Square account. Your application should set the session parameter to false to force the seller to sign in to one of their Square accounts.
+
+state - The state parameter is a string that's passed to the Square authorization page and returned as a state parameter to the callback URL defined for your application. You can set the state value to a CSRF token that's a unique, random, and unpredictable value generated by your application server. When the state parameter is returned to your application's callback, your application should verify that the state value matches your generated CSRF token.
+
+Provide a user-friendly authorization failure page. If an OAuth flow is denied by the seller or another error occurs, your application should show a user-friendly page to tell them that authorization failed.
+Secure OAuth token handling
+Be sure that your production application implements the following requirements for securely handling OAuth tokens:
+
+Don't store OAuth tokens on a public client - Access tokens must not be sent to or persisted on a native mobile client. Instead, store them securely on your application server. All methods involving OAuth should be managed by a service layer hosted by an application server.
+Require access token renewal - Square OAuth tokens expire every 30 days. To ensure that tokens remain valid, Square strongly recommends that all applications refresh their access tokens asynchronously every 7 days or less.
+Check for stale access tokens - Your production application should implement logic that checks the age of each token when retrieved from your database before being used in a Square API call. If a token is older than 8 days, your application should notify you that there's a problem with your renewal login. Avoid silent token failures, which can result in your application breaking. This kind of break has caused partner outages in the past.
+Use access token encryption - Your production application should use a strong encryption standard such as AES. Your production encryption key shouldn't be accessible to database administrators, business analysts, developers, or others who don't need it. The access tokens that this key protects can be used to perform any transaction on behalf of the seller and thus should be guarded like passwords.
+Show access token status - An access token status feature in your application must always show the current state of a token (valid, expired, or revoked). Sellers must always be able to revoke an access token by using the RevokeToken endpoint.
+Verify that tokens are valid - Square provides an oauth.authorization.revoked webhook event to alert partners if a token has been revoked in real time. An alternative is to periodically poll the ListLocations endpoint and check for valid and invalid responses. An invalid response indicates that a token is no longer valid.
+Error handling
+In production, OAuth errors must be handled appropriately and errors that impact the seller must be clearly communicated to the seller. These include:
+
+Error codes such as UNAUTHORIZED, ACCESS_TOKEN_EXPIRED, and ACCESS_TOKEN_REVOKED must be handled. Sellers should be presented with a user-friendly message instead of API error responses.
+If your application doesn't have the required permissions, API requests can fail with an INSUFFICIENT_SCOPES error. Make sure your application has the needed permissions before moving to production.
+A common error that occurs when moving an application from the Square Sandbox to a production environment is forgetting to change the base URL. The base URL for calling Sandbox endpoints is https://connect.squareupsandbox.com. When you move your application to production, you need production credentials and you need to use https://connect.squareup.com as the base URL.

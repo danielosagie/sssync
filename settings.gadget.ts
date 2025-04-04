@@ -1,0 +1,70 @@
+import type { GadgetSettings } from "gadget-server";
+
+export const settings: GadgetSettings = {
+  type: "gadget/settings/v1",
+  frameworkVersion: "v1.3.0",
+  plugins: {
+    connections: {
+      shopify: {
+        apiVersion: "2024-10",
+        enabledModels: [
+          "shopifyApp",
+          "shopifyAppCredit",
+          "shopifyAppInstallation",
+          "shopifyAppPurchaseOneTime",
+          "shopifyAppSubscription",
+          "shopifyAppUsageRecord",
+          "shopifyBulkOperation",
+          "shopifyBusinessEntity",
+          "shopifyDomain",
+          "shopifyFile",
+          "shopifyFulfillment",
+          "shopifyFulfillmentEvent",
+          "shopifyFulfillmentLineItem",
+          "shopifyInventoryItem",
+          "shopifyInventoryLevel",
+          "shopifyLocation",
+          "shopifyOrder",
+          "shopifyOrderAdjustment",
+          "shopifyOrderLineItem",
+          "shopifyProduct",
+          "shopifyProductMedia",
+          "shopifyProductOption",
+          "shopifyProductVariant",
+          "shopifyProductVariantMedia",
+          "shopifyRefund",
+          "shopifyRefundDuty",
+          "shopifyRefundLineItem",
+        ],
+        type: "partner",
+        scopes: [
+          "read_products",
+          "read_orders",
+          "read_fulfillments",
+          "write_products",
+          "read_inventory",
+          "read_locations",
+          "write_locations",
+          "write_inventory",
+          "read_returns",
+          "write_returns",
+        ],
+      },
+    },
+    authentications: {
+      settings: {
+        redirectOnSignIn: "/signed-in",
+        signInPath: "/sign-in",
+        unauthorizedUserRedirect: "signInPath",
+        defaultSignedInRoles: ["signed-in"],
+      },
+      methods: {
+        emailPassword: true,
+        googleOAuth: {
+          scopes: ["email", "profile"],
+          offlineAccess: false,
+        },
+      },
+    },
+  },
+};
